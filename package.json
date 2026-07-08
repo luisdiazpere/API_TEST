@@ -1,0 +1,13 @@
+{
+  "name": "ip-lookup-app",
+  "version": "1.0.0",
+  "description": "Consulta de geolocalizacion de IPs usando ipinfo.io Lite API",
+  "main": "server.js",
+  "scripts": {
+    "start": "node server.js"
+  },
+  "dependencies": {
+    "express": "^4.19.2",
+    "multer": "^2.0.1"
+  }
+}

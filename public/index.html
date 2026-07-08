@@ -1,0 +1,67 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Consulta de IPs - ipinfo.io</title>
+<link rel="stylesheet" href="style.css" />
+</head>
+<body>
+  <main class="container">
+    <h1>Consulta de geolocalizacion de IPs y dominios</h1>
+    <p class="subtitle">Escribe IPs y/o dominios (o URLs) separados por coma, y/o sube un archivo .txt (uno por linea o separados por coma). Los dominios se resuelven via DNS antes de consultar ipinfo.io. Maximo 50 entradas por solicitud.</p>
+
+    <form id="lookup-form">
+      <label for="ips-text">IPs o dominios escritos</label>
+      <textarea id="ips-text" name="ips" rows="4" placeholder="8.8.8.8, google.com, https://example.com, 192.168.1.1"></textarea>
+
+      <label for="ips-file">Archivo .txt (opcional)</label>
+      <div class="file-row">
+        <input type="file" id="ips-file" name="file" accept=".txt" />
+        <button type="button" id="remove-file-btn" hidden>Quitar archivo</button>
+      </div>
+      <span id="file-name" class="file-name"></span>
+
+      <button type="submit" id="submit-btn">Consultar</button>
+    </form>
+
+    <div id="status" class="status" hidden></div>
+
+    <section id="results-section" hidden>
+      <div class="export-bar">
+        <button id="export-csv">Descargar CSV</button>
+        <button id="export-json">Descargar JSON</button>
+      </div>
+
+      <h2>Resultados</h2>
+      <table id="results-table">
+        <thead>
+          <tr><th>IP</th><th>Resuelto desde</th><th>ASN</th><th>Organizacion</th><th>Pais</th><th>Continente</th><th>Cache</th></tr>
+        </thead>
+        <tbody></tbody>
+      </table>
+
+      <div id="errors-panel" hidden>
+        <h2>Errores</h2>
+        <div id="invalid-errors" class="error-group" hidden>
+          <h3>Formato invalido</h3>
+          <ul id="invalid-list"></ul>
+        </div>
+        <div id="dns-errors" class="error-group" hidden>
+          <h3>Fallos de resolucion DNS</h3>
+          <ul id="dns-list"></ul>
+        </div>
+        <div id="api-errors" class="error-group" hidden>
+          <h3>Errores de ipinfo.io</h3>
+          <ul id="api-list"></ul>
+        </div>
+      </div>
+
+      <h2>Estadisticas</h2>
+      <div class="stats-grid" id="stats-grid"></div>
+    </section>
+  </main>
+
+  <script src="app.js"></script>
+</body>
+</html>
