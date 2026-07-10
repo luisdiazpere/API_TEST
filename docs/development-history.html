@@ -1,0 +1,534 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>ip-lookup-app — Security &amp; Auth Overhaul</title>
+<style>
+  :root {
+    --ink: #1a1d27;
+    --ink-soft: #4b5163;
+    --ink-faint: #8a90a3;
+    --paper: #fdfdfc;
+    --surface: #f4f5f7;
+    --accent: #0891b2;
+    --accent-dim: #e0f4f9;
+    --danger: #b91c1c;
+    --danger-dim: #fdecec;
+    --success: #047857;
+    --success-dim: #e7f6f0;
+    --warning: #b45309;
+    --warning-dim: #fdf3e0;
+    --border: #e2e4e9;
+    --mono: "IBM Plex Mono", ui-monospace, "SF Mono", Menlo, monospace;
+  }
+
+  * { box-sizing: border-box; }
+
+  body {
+    margin: 0;
+    background: var(--paper);
+    color: var(--ink);
+    font-family: Georgia, "Times New Roman", serif;
+    font-size: 17px;
+    line-height: 1.65;
+  }
+
+  .page {
+    max-width: 760px;
+    margin: 0 auto;
+    padding: 56px 28px 96px;
+  }
+
+  header.doc-header { margin-bottom: 48px; }
+
+  .kicker {
+    font-family: var(--mono);
+    font-size: 12px;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    color: var(--accent);
+    margin-bottom: 10px;
+  }
+
+  h1 {
+    font-size: 34px;
+    line-height: 1.2;
+    margin: 0 0 12px;
+    font-weight: 700;
+  }
+
+  .subtitle { font-size: 18px; color: var(--ink-soft); font-style: italic; margin: 0; }
+
+  .meta {
+    margin-top: 18px;
+    font-family: var(--mono);
+    font-size: 12.5px;
+    color: var(--ink-faint);
+  }
+
+  h2 {
+    font-size: 24px;
+    margin: 56px 0 16px;
+    padding-bottom: 8px;
+    border-bottom: 2px solid var(--border);
+  }
+
+  h3 { font-size: 18px; margin: 32px 0 10px; }
+
+  p { margin: 0 0 16px; }
+
+  a { color: var(--accent); }
+
+  code {
+    font-family: var(--mono);
+    font-size: 0.82em;
+    background: var(--surface);
+    padding: 2px 6px;
+    border-radius: 4px;
+  }
+
+  pre {
+    background: #14161f;
+    color: #d5dae5;
+    font-family: var(--mono);
+    font-size: 13px;
+    line-height: 1.55;
+    padding: 16px 18px;
+    border-radius: 8px;
+    overflow-x: auto;
+    margin: 16px 0 20px;
+  }
+  pre code { background: none; padding: 0; color: inherit; font-size: inherit; }
+
+  table {
+    width: 100%;
+    border-collapse: collapse;
+    margin: 16px 0 24px;
+    font-size: 15px;
+  }
+  th {
+    text-align: left;
+    font-family: var(--mono);
+    font-size: 11.5px;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+    color: var(--ink-faint);
+    padding: 8px 10px;
+    border-bottom: 2px solid var(--border);
+  }
+  td { padding: 9px 10px; border-bottom: 1px solid var(--border); vertical-align: top; }
+  td code { white-space: nowrap; }
+
+  .callout {
+    border-left: 4px solid var(--accent);
+    background: var(--accent-dim);
+    padding: 14px 18px;
+    border-radius: 0 8px 8px 0;
+    margin: 20px 0;
+    font-size: 15.5px;
+  }
+  .callout.why { border-color: var(--warning); background: var(--warning-dim); }
+  .callout.danger { border-color: var(--danger); background: var(--danger-dim); }
+  .callout .label {
+    font-family: var(--mono);
+    font-size: 11px;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    display: block;
+    margin-bottom: 6px;
+    color: var(--ink-soft);
+  }
+
+  .severity {
+    display: inline-block;
+    font-family: var(--mono);
+    font-size: 11px;
+    font-weight: 600;
+    letter-spacing: 0.05em;
+    text-transform: uppercase;
+    padding: 2px 9px;
+    border-radius: 999px;
+    margin-right: 8px;
+    vertical-align: 2px;
+  }
+  .severity.critical { background: var(--danger-dim); color: var(--danger); }
+  .severity.high { background: var(--warning-dim); color: var(--warning); }
+  .severity.medium { background: var(--accent-dim); color: var(--accent); }
+
+  .timeline { list-style: none; margin: 20px 0; padding: 0; }
+  .timeline li {
+    position: relative;
+    padding: 0 0 22px 28px;
+    border-left: 2px solid var(--border);
+    margin-left: 8px;
+  }
+  .timeline li:last-child { border-left-color: transparent; padding-bottom: 0; }
+  .timeline li::before {
+    content: "";
+    position: absolute;
+    left: -7px;
+    top: 4px;
+    width: 12px;
+    height: 12px;
+    border-radius: 50%;
+    background: var(--accent);
+    border: 2px solid var(--paper);
+  }
+  .timeline .commit {
+    font-family: var(--mono);
+    font-size: 12px;
+    color: var(--ink-faint);
+  }
+  .timeline strong { display: block; }
+
+  .check { color: var(--success); font-family: var(--mono); }
+
+  ul.compact { margin: 0 0 16px; padding-left: 24px; }
+  ul.compact li { margin-bottom: 6px; }
+
+  .footer-note {
+    margin-top: 64px;
+    padding: 18px 20px;
+    background: var(--surface);
+    border-radius: 8px;
+    font-size: 14.5px;
+    color: var(--ink-soft);
+  }
+
+  nav.toc {
+    background: var(--surface);
+    border-radius: 8px;
+    padding: 18px 24px;
+    margin: 32px 0 8px;
+    font-size: 15px;
+  }
+  nav.toc ol { margin: 8px 0 0; padding-left: 22px; }
+  nav.toc li { margin-bottom: 4px; }
+  nav.toc .toc-title {
+    font-family: var(--mono);
+    font-size: 11.5px;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    color: var(--ink-faint);
+  }
+
+  @media print {
+    body { font-size: 11.5pt; }
+    .page { max-width: 100%; padding: 0; }
+    pre { white-space: pre-wrap; }
+    h2 { break-after: avoid; }
+    pre, table, .callout { break-inside: avoid; }
+  }
+</style>
+</head>
+<body>
+<div class="page">
+
+<header class="doc-header">
+  <div class="kicker">Development Record · ip-lookup-app</div>
+  <h1>Security &amp; Auth Overhaul</h1>
+  <p class="subtitle">What changed, how it was developed, and why each decision was made</p>
+  <div class="meta">Branch <code>security-fixes</code> · July 10, 2026 · commits <code>297ad5f…7580522</code></div>
+</header>
+
+<nav class="toc">
+  <span class="toc-title">Contents</span>
+  <ol>
+    <li><a href="#starting-point">The starting point</a></li>
+    <li><a href="#process">How the work was developed</a></li>
+    <li><a href="#security">Security fixes</a></li>
+    <li><a href="#history-rewrite">The git history rewrite</a></li>
+    <li><a href="#auth">The login system</a></li>
+    <li><a href="#history-tracker">The history tracker</a></li>
+    <li><a href="#redesign">The UI redesign</a></li>
+    <li><a href="#dependencies">Dependencies added, and why each one</a></li>
+    <li><a href="#verification">How everything was verified</a></li>
+    <li><a href="#reference">Quick reference</a></li>
+  </ol>
+</nav>
+
+<h2 id="starting-point">1 · The starting point</h2>
+
+<p>The app began as a working prototype: an Express server that batch-resolves IPs and domains
+to geolocation data through the <a href="https://ipinfo.io/developers/lite-api">ipinfo.io Lite API</a>,
+with a single vanilla-JS page in front of it. It worked — but it was built for one person's
+machine, not for exposure. A security review found five issues, the most serious being an
+API token committed to source control. There was also no persistence of any kind: no accounts,
+no memory of past lookups.</p>
+
+<ul class="timeline">
+  <li><span class="commit">7cd8159 · 6de8822</span><strong>Base prototype</strong>Working lookup pipeline, hardcoded token, open endpoint.</li>
+  <li><span class="commit">history rewrite</span><strong>Token scrubbed from every past commit</strong>Both commits rewritten so the secret never existed in history.</li>
+  <li><span class="commit">297ad5f</span><strong>Security hardening</strong>Env-based token, rate limiting, upload caps, XSS escaping.</li>
+  <li><span class="commit">b02a13e · a8e98e3</span><strong>Local dev ergonomics</strong>dotenv wiring; ngrok binary kept out of the repo.</li>
+  <li><span class="commit">2516b06</span><strong>Login + history + redesign</strong>SQLite persistence, session auth, per-user history, full dark UI per the Pencil design.</li>
+  <li><span class="commit">7580522</span><strong>Documentation</strong>CLAUDE.md updated to describe the new architecture.</li>
+</ul>
+
+<h2 id="process">2 · How the work was developed</h2>
+
+<p>The work followed a deliberate sequence, and two ground rules were adopted mid-project and
+written into <code>CLAUDE.md</code> so they persist for future sessions:</p>
+
+<div class="callout">
+  <span class="label">Project rules adopted</span>
+  <strong>Never work directly on <code>master</code></strong> — every change gets its own branch
+  (all of this work lives on <code>security-fixes</code>). And <strong>never assume — ask first</strong>
+  when scope or intent is ambiguous.
+</div>
+
+<p>That second rule shaped the process visibly. Before any destructive or ambiguous step, the
+developer (Claude Code, driven by Luis) stopped and asked:</p>
+
+<ul class="compact">
+  <li><strong>"Delete all possible leaks"</strong> — files only, or rewrite git history? → <em>Answer: rewrite full history</em> (destructive, so it needed explicit sign-off).</li>
+  <li><strong>".postman in there"</strong> — into <code>.gitignore</code> or into <code>.env</code>? → <em>Answer: .gitignore</em>.</li>
+  <li><strong>Access model</strong> — open lookups with history as a login perk, or login required for everything? → <em>Answer: login required</em>, protecting the ipinfo quota.</li>
+  <li><strong>Database</strong> — SQLite, a JSON file, or PostgreSQL? → <em>Answer: SQLite</em>, matching the app's single-process scale.</li>
+</ul>
+
+<p>The larger build then proceeded in phases — backend modules first, then server wiring, then
+the frontend, then end-to-end verification with <code>curl</code>, and finally a live test through
+an ngrok tunnel before anything was handed over. The UI was not designed ad hoc: a Pencil design
+file (<code>untitled.pen</code>, kept out of the repo) was parsed programmatically to extract its
+design tokens, page structures, and exact copy, and the frontend was built to match it.</p>
+
+<h2 id="security">3 · Security fixes</h2>
+
+<h3><span class="severity critical">Critical</span>Hardcoded API token</h3>
+<p><strong>What:</strong> the ipinfo.io token sat as a string literal in <code>src/config.js</code>,
+committed to git. <strong>The fix:</strong> the config now reads
+<code>process.env.IPINFO_TOKEN</code> and throws at startup if it's missing — failing fast beats
+failing mysteriously on the first API call. The token lives in <code>.env</code>, which is
+gitignored, and <code>dotenv</code> loads it in development.</p>
+
+<div class="callout why">
+  <span class="label">Why it matters</span>
+  A secret in source control is compromised the moment the repo is shared, cloned, or pushed —
+  and removing it from the <em>current</em> files does nothing, because git history preserves
+  every version forever. That's why this fix came with a history rewrite (§4).
+</div>
+
+<h3><span class="severity high">High</span>No rate limiting</h3>
+<p><strong>What:</strong> any client could hammer <code>POST /api/lookup</code> without limit, burning
+the ipinfo quota and CPU. <strong>The fix:</strong>
+<a href="https://express-rate-limit.mintlify.app/">express-rate-limit</a> caps the endpoint at
+<strong>30 requests per minute per IP</strong>, answering excess traffic with HTTP 429 and standard
+<code>RateLimit-*</code> headers.</p>
+
+<h3><span class="severity high">High</span>Unbounded uploads</h3>
+<p><strong>What:</strong> multer used memory storage with no size limit — a large upload would be
+buffered entirely into RAM before any validation ran. <strong>The fix:</strong> uploads are capped at
+<strong>1&nbsp;MB</strong> and JSON bodies at <strong>50&nbsp;KB</strong>. For a file of newline-separated
+IPs with a 50-entry cap per request, 1&nbsp;MB is already generous.</p>
+
+<h3><span class="severity high">High</span>XSS via <code>innerHTML</code></h3>
+<p><strong>What:</strong> API-sourced values (<code>as_name</code>, <code>country</code>, …) were interpolated
+straight into <code>row.innerHTML</code>. Data that arrives from <em>any</em> external system must be
+treated as untrusted — a tainted upstream response would have executed in the browser.
+<strong>The fix:</strong> an <code>esc()</code> helper HTML-encodes <code>&amp; &lt; &gt; &quot;</code>, and every
+dynamic value rendered through <code>innerHTML</code> passes through it — results, error lists, and
+stat cards alike. (See <a href="https://cheatsheetseries.owasp.org/cheatsheets/Cross_Site_Scripting_Prevention_Cheat_Sheet.html">OWASP's XSS prevention guidance</a>.)</p>
+
+<h3><span class="severity medium">Medium</span>Repository hygiene</h3>
+<p><code>.gitignore</code> grew to cover everything that must never be committed:
+<code>.env</code> (secrets), <code>.postman/</code> (workspace metadata — it was already tracked, so it
+was also untracked with <code>git rm --cached</code>), <code>bin/</code> (the local ngrok binary),
+<code>*.pen</code> (the design file), and <code>*.sqlite*</code> (the database and its WAL/SHM sidecars).</p>
+
+<h2 id="history-rewrite">4 · The git history rewrite</h2>
+
+<p>Removing the token from the current files would still have left it readable in the
+<code>base</code> commit. The repo's full history was therefore rewritten with
+<code>git filter-branch --tree-filter</code>, running a small Python script against every commit
+that replaced the literal token with <code>process.env.IPINFO_TOKEN</code>:</p>
+
+<pre><code>FILTER_BRANCH_SQUELCH_WARNING=1 git filter-branch --force \
+  --tree-filter 'python3 /tmp/scrub_token.py' -- --all
+
+# then: delete refs/original backups, expire reflog, git gc --prune=now
+# verify: git log -p | grep &lt;token&gt;  →  no matches</code></pre>
+
+<div class="callout danger">
+  <span class="label">Why this was gated on approval</span>
+  History rewriting is destructive: every commit hash changes (<code>f65bbef → 7cd8159</code>,
+  <code>a8b756b → 6de8822</code>), and any existing clone or remote diverges permanently. Pushing
+  the rewritten <code>master</code> requires a force-push. This is exactly the kind of step the
+  "never assume — ask first" rule exists for; it ran only after an explicit choice.
+  Note that rewriting history does <em>not</em> un-leak a token that was already pushed —
+  the token should still be rotated if the repo was ever public.
+</div>
+
+<h2 id="auth">5 · The login system</h2>
+
+<p>With "login required" chosen as the access model, the entire API sits behind authentication.
+The design is deliberately boring — proven primitives, no invention:</p>
+
+<table>
+  <tr><th>Decision</th><th>Choice</th><th>Reasoning</th></tr>
+  <tr>
+    <td>Session model</td>
+    <td>Cookie sessions<br /><code>express-session</code></td>
+    <td>The frontend and API are same-origin (Express serves both), so an
+        <code>httpOnly</code> cookie is invisible to JavaScript — immune to XSS token theft —
+        and logout genuinely revokes access server-side. JWTs would add complexity and lose
+        both properties.</td>
+  </tr>
+  <tr>
+    <td>Password storage</td>
+    <td><code>bcrypt</code>, 12 rounds</td>
+    <td>Deliberately slow hashing blunts offline brute-force if the database ever leaks.
+        Plaintext or fast hashes (SHA-256) are never acceptable for passwords.</td>
+  </tr>
+  <tr>
+    <td>Session persistence</td>
+    <td>SQLite store<br /><code>better-sqlite3-session-store</code></td>
+    <td>Sessions live in the same <code>data.sqlite</code> as the app data, so logins survive
+        server restarts with zero extra infrastructure.</td>
+  </tr>
+  <tr>
+    <td>Cookie flags</td>
+    <td><code>httpOnly</code>, <code>sameSite=lax</code>, 7-day expiry</td>
+    <td><code>sameSite=lax</code> blocks cross-site POSTs from carrying the session — CSRF
+        protection for exactly the endpoints that mutate state.</td>
+  </tr>
+  <tr>
+    <td>Login flow</td>
+    <td><code>req.session.regenerate()</code></td>
+    <td>Issuing a fresh session ID at login prevents session-fixation attacks.</td>
+  </tr>
+  <tr>
+    <td>Failed login</td>
+    <td>One generic message</td>
+    <td>"Email or password incorrect" — never revealing <em>which</em> was wrong, so the endpoint
+        can't be used to enumerate registered emails.</td>
+  </tr>
+</table>
+
+<p>The secret that signs session cookies (<code>SESSION_SECRET</code>) was generated with
+<code>openssl rand -hex 32</code> and lives in <code>.env</code> beside the ipinfo token; config
+validates both at startup.</p>
+
+<h2 id="history-tracker">6 · The history tracker</h2>
+
+<p>Two tables in <code>data.sqlite</code>, created idempotently by <code>src/db.js</code> at startup
+(WAL mode for concurrent reads, foreign keys on):</p>
+
+<pre><code>users:    id · name · email (UNIQUE, case-insensitive) · password_hash · created_at
+lookups:  id · user_id → users (CASCADE) · created_at · requested_count
+          · results_json · stats_json · cache_hits · api_calls</code></pre>
+
+<div class="callout why">
+  <span class="label">Why full results are stored</span>
+  The Pencil design's history rows include a <strong>"View Results"</strong> button — which is only
+  possible if each session's complete results are stored, not just summary counts. At a maximum
+  of 50 entries per request, a stored session is a few kilobytes; the trade-off is trivially
+  cheap for the feature it enables. The main page re-renders any saved session via
+  <code>/?session=&lt;id&gt;</code>, reusing the exact same rendering code as a live lookup.
+</div>
+
+<p>Every successful <code>POST /api/lookup</code> saves its full response payload for the logged-in
+user (wrapped in try/catch so a storage failure can never break the lookup itself). The list
+endpoint derives what the history page shows: the top continent as the "breakdown" badge, and
+the cache percentage from <code>cache_hits / (cache_hits + api_calls)</code>. Both history endpoints
+filter by <code>user_id</code> from the session — one user can never read or delete another's rows.</p>
+
+<h2 id="redesign">7 · The UI redesign</h2>
+
+<p>The frontend was rebuilt to match the Pencil design file exactly — its design tokens were
+extracted programmatically and became CSS custom properties: background <code>#0F1117</code>,
+surfaces <code>#1A1D27</code>/<code>#232733</code>, accent <code>#22E5FF</code>, Inter for text and
+IBM Plex Mono for anything machine-flavored (IPs, ASNs, counts). No framework, no build step —
+matching the codebase's existing vanilla-JS approach.</p>
+
+<table>
+  <tr><th>Page</th><th>Contents</th></tr>
+  <tr><td><code>login.html</code></td><td>Centered card, lock icon, email + password, "Forgot password?" (stubbed — no backend yet), link to signup. Redirects into the app on success.</td></tr>
+  <tr><td><code>signup.html</code></td><td>Name, email, password + confirmation (client-checked match, 8-char minimum enforced both sides).</td></tr>
+  <tr><td><code>index.html</code></td><td>Top bar (brand · "ipinfo.io Lite" badge · account dropdown), textarea + drag-and-drop file zone with a removable file chip, stat cards with a 2×2 metric-tile summary, results table with cached/live badges, collapsible "Parsing Issues" groups with count badges.</td></tr>
+  <tr><td><code>history.html</code></td><td>Breadcrumb top bar, "Search History" table: timestamp + relative time, entry count, region breakdown, cache %, View Results / delete per row, empty state for new accounts.</td></tr>
+</table>
+
+<p>Shared behavior lives in <code>shared.js</code>: the <code>esc()</code> escaper, the account-menu
+wiring, and <code>requireSession()</code> — every protected page calls <code>/api/auth/me</code> on load
+and bounces to the login page on 401. That client-side redirect is a convenience; the real
+enforcement is server-side on every API route.</p>
+
+<h2 id="dependencies">8 · Dependencies added, and why each one</h2>
+
+<table>
+  <tr><th>Package</th><th>Added for</th><th>Why this one</th></tr>
+  <tr><td><code>express-rate-limit</code></td><td>Abuse protection</td><td>The standard Express middleware; standard headers, tiny surface.</td></tr>
+  <tr><td><code>dotenv</code></td><td>Local secrets</td><td>Loads <code>.env</code> in development; hosts inject real env vars in production.</td></tr>
+  <tr><td><code>better-sqlite3</code></td><td>Persistence</td><td>File-based, zero infrastructure, synchronous API that keeps the code simple. Right-sized for a single-process app.</td></tr>
+  <tr><td><code>bcrypt</code></td><td>Password hashing</td><td>The battle-tested default; cost factor 12.</td></tr>
+  <tr><td><code>express-session</code></td><td>Login sessions</td><td>Cookie-based sessions with pluggable stores.</td></tr>
+  <tr><td><code>better-sqlite3-session-store</code></td><td>Session persistence</td><td>Reuses the same SQLite database — no second datastore.</td></tr>
+</table>
+
+<h2 id="verification">9 · How everything was verified</h2>
+
+<p>After the build, the full flow was exercised end-to-end with <code>curl</code> against a running
+server, using a cookie jar to carry the session:</p>
+
+<ul class="compact">
+  <li><span class="check">✓</span> Unauthenticated <code>POST /api/lookup</code> → <strong>401</strong></li>
+  <li><span class="check">✓</span> Register → <strong>201</strong>, session cookie issued</li>
+  <li><span class="check">✓</span> <code>GET /api/auth/me</code> → correct user</li>
+  <li><span class="check">✓</span> Authenticated lookup (IPs + domain + private range) → real geolocation data, DNS resolution, bogon detection</li>
+  <li><span class="check">✓</span> <code>GET /api/history</code> → session listed with top region and cache %</li>
+  <li><span class="check">✓</span> <code>GET /api/history/1</code> → full stored results round-trip</li>
+  <li><span class="check">✓</span> Wrong password → <strong>401</strong>, generic error</li>
+  <li><span class="check">✓</span> Logout → session destroyed, <code>/me</code> returns <strong>401</strong></li>
+</ul>
+
+<p>Then the same register-and-lookup flow was repeated <em>through a public ngrok tunnel</em> —
+which matters because ngrok adds <code>X-Forwarded-For</code> proxy headers that can trip
+rate-limiter validation. It passed, the test account was deleted, and the URL was handed over
+for manual testing of the browser flow.</p>
+
+<h2 id="reference">10 · Quick reference</h2>
+
+<h3>Environment (<code>.env</code>, never committed)</h3>
+<pre><code>IPINFO_TOKEN=&lt;your ipinfo.io token&gt;
+SESSION_SECRET=&lt;openssl rand -hex 32&gt;</code></pre>
+
+<h3>Run</h3>
+<pre><code>npm install
+npm start                      # → http://localhost:3000 (lands on login)
+./bin/ngrok http 3000          # optional public tunnel</code></pre>
+
+<h3>API surface</h3>
+<table>
+  <tr><th>Route</th><th>Auth</th><th>Purpose</th></tr>
+  <tr><td><code>POST /api/auth/register</code></td><td>—</td><td>Create account, start session</td></tr>
+  <tr><td><code>POST /api/auth/login</code></td><td>—</td><td>Sign in (regenerates session ID)</td></tr>
+  <tr><td><code>POST /api/auth/logout</code></td><td>session</td><td>Destroy session</td></tr>
+  <tr><td><code>GET /api/auth/me</code></td><td>session</td><td>Current user (drives the account menu)</td></tr>
+  <tr><td><code>POST /api/lookup</code></td><td>session</td><td>Batch lookup · 30/min rate limit · saves to history</td></tr>
+  <tr><td><code>GET /api/history</code></td><td>session</td><td>List saved sessions (own only)</td></tr>
+  <tr><td><code>GET /api/history/:id</code></td><td>session</td><td>Full stored results for one session</td></tr>
+  <tr><td><code>DELETE /api/history/:id</code></td><td>session</td><td>Remove a saved session</td></tr>
+</table>
+
+<h3>Known follow-ups</h3>
+<ul class="compact">
+  <li>Rotate the ipinfo token if the repo was ever pushed publicly with the old history.</li>
+  <li>"Forgot password?" is a stub — no reset flow exists yet.</li>
+  <li>UI copy is English (per the design); server error messages remain Spanish.</li>
+  <li>The in-memory ipinfo response cache still grows unbounded between restarts (minor).</li>
+  <li>Set <code>cookie.secure</code> + <code>app.set("trust proxy", 1)</code> when deploying behind HTTPS for real use.</li>
+</ul>
+
+<div class="footer-note">
+  <strong>Questions?</strong> This document was produced by Claude Code, which developed the changes
+  described here. Ask it anything that's unclear — why a decision was made, how a module works,
+  or what to build next. Primary sources worth reading:
+  <a href="https://expressjs.com/en/advanced/best-practice-security.html">Express security best practices</a> ·
+  <a href="https://cheatsheetseries.owasp.org/cheatsheets/Session_Management_Cheat_Sheet.html">OWASP Session Management Cheat Sheet</a>.
+</div>
+
+</div>
+</body>
+</html>
