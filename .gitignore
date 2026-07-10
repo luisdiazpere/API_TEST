@@ -7,3 +7,4 @@ bin/
 *.sqlite
 *.sqlite-shm
 *.sqlite-wal
+.mcp.json
