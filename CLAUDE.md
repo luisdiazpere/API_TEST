@@ -22,8 +22,13 @@ This is a small Express app (`ip-lookup-app`) that batch-resolves IPs/domains to
 6. `stats.js` aggregates the enriched results into counts by country/continent/ASN and a bogon (private/reserved IP) count.
 7. `server.js` assembles the final JSON: `results`, `invalid`, `apiErrors`, `dnsErrors`, `stats`, `meta`.
 
-All tunables (ipinfo token/base URL, `MAX_IPS_PER_REQUEST`, cache TTL, lookup concurrency, port) live in `src/config.js`. The ipinfo token is currently hardcoded there as a prototype value — move it to an environment variable before any public deployment.
+All tunables (ipinfo token/base URL, `MAX_IPS_PER_REQUEST`, cache TTL, lookup concurrency, port) live in `src/config.js`. The ipinfo token is read from the `IPINFO_TOKEN` environment variable — set it in `.env` (gitignored) before running.
 
 **Frontend** (`public/`): a single vanilla-JS page (no framework/build tool). `app.js` submits the form via `fetch` to `/api/lookup`, renders the results table/stats/error groups, and supports exporting results as CSV or JSON client-side. Served statically by Express from `public/`.
 
 **API testing**: `postman/` and `.postman/` hold a Postman workspace/collection setup for exercising the API manually.
+
+## Rules
+
+- **Never work directly on `master`.** Always create a new branch for any change, no matter how small.
+- **Never assume — ask first.** If anything about a task is ambiguous (scope, intent, destructive side-effects), ask a clarifying question before proceeding.

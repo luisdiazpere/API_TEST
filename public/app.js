@@ -19,6 +19,14 @@ const fileNameLabel = document.getElementById("file-name");
 
 let lastResults = [];
 
+function esc(v) {
+  return String(v ?? "")
+    .replace(/&/g, "&amp;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;")
+    .replace(/"/g, "&quot;");
+}
+
 fileInput.addEventListener("change", () => {
   const hasFile = fileInput.files.length > 0;
   removeFileBtn.hidden = !hasFile;
@@ -41,22 +49,22 @@ function renderTable(results) {
   tableBody.innerHTML = "";
   for (const result of results) {
     const row = document.createElement("tr");
-    const resolvedFrom = result.resolvedFrom ?? "-";
+    const resolvedFrom = esc(result.resolvedFrom ?? "-");
     if (result.bogon) {
       row.innerHTML = `
-        <td>${result.ip}</td>
+        <td>${esc(result.ip)}</td>
         <td>${resolvedFrom}</td>
         <td colspan="4">IP privada / reservada (sin datos publicos)</td>
         <td>${result.fromCache ? "si" : "no"}</td>
       `;
     } else {
       row.innerHTML = `
-        <td>${result.ip}</td>
+        <td>${esc(result.ip)}</td>
         <td>${resolvedFrom}</td>
-        <td>${result.asn ?? ""}</td>
-        <td>${result.as_name ?? ""}</td>
-        <td>${result.country ?? ""}</td>
-        <td>${result.continent ?? ""}</td>
+        <td>${esc(result.asn)}</td>
+        <td>${esc(result.as_name)}</td>
+        <td>${esc(result.country)}</td>
+        <td>${esc(result.continent)}</td>
         <td>${result.fromCache ? "si" : "no"}</td>
       `;
     }
@@ -66,7 +74,7 @@ function renderTable(results) {
 
 function renderErrorGroup(group, list, entries, keyField) {
   group.hidden = entries.length === 0;
-  list.innerHTML = entries.map((e) => `<li>${e[keyField]}: ${e.reason}</li>`).join("");
+  list.innerHTML = entries.map((e) => `<li>${esc(e[keyField])}: ${esc(e.reason)}</li>`).join("");
 }
 
 function renderErrors(invalid, dnsErrors, apiErrors) {

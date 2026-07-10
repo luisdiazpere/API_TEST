@@ -1,6 +1,7 @@
 const express = require("express");
 const multer = require("multer");
 const path = require("path");
+const rateLimit = require("express-rate-limit");
 
 const { MAX_IPS_PER_REQUEST, PORT } = require("./src/config");
 const { parseIpList } = require("./src/parseInput");
@@ -11,12 +12,19 @@ const { lookupIps } = require("./src/ipinfoClient");
 const { buildStats } = require("./src/stats");
 
 const app = express();
-const upload = multer({ storage: multer.memoryStorage() });
+const upload = multer({ storage: multer.memoryStorage(), limits: { fileSize: 1 * 1024 * 1024 } });
 
-app.use(express.json());
+app.use(express.json({ limit: "50kb" }));
 app.use(express.static(path.join(__dirname, "public")));
 
-app.post("/api/lookup", upload.single("file"), async (req, res) => {
+const lookupLimiter = rateLimit({
+  windowMs: 60 * 1000,
+  max: 30,
+  standardHeaders: true,
+  legacyHeaders: false,
+});
+
+app.post("/api/lookup", lookupLimiter, upload.single("file"), async (req, res) => {
   const tokens = parseIpList(req.body.ips, req.file ? req.file.buffer : null);
 
   if (tokens.length === 0) {
