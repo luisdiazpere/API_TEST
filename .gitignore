@@ -8,3 +8,6 @@ bin/
 *.sqlite-shm
 *.sqlite-wal
 .mcp.json
+node_modules/
+security-tests/
+*.pentest.sh
