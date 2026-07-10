@@ -6,7 +6,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 - Install dependencies: `npm install`
 - Run the server: `npm start` (runs `node server.js`, listens on the port in `src/config.js`)
-- Start ngrok tunnel: `bin/ngrok http 3000` (binary at `bin/ngrok`, gitignored — download from ngrok.com or extract from the AUR package). The public HTTPS URL is printed to stdout; the traffic inspector runs at http://localhost:4040.
+- Start ngrok tunnel: `bin/ngrok http 3000` (binary at `bin/ngrok`, gitignored). One-time setup: create a free account at ngrok.com, copy the authtoken from the dashboard, run `bin/ngrok config add-authtoken <token>` once, then `bin/ngrok http 3000` each time. Public URL is printed to stdout; traffic inspector at http://localhost:4040.
 - No build step, no lint script, and no test suite are configured in this repo.
 
 ## Architecture
