@@ -10,7 +10,9 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## Architecture
 
-This is a small Express app (`ip-lookup-app`) that batch-resolves IPs/domains to geolocation data via the ipinfo.io Lite API. There is no database — all state is in-memory.
+This is a small Express app (`ip-lookup-app`) that batch-resolves IPs/domains to geolocation data via the ipinfo.io Lite API. Persistence is a SQLite file (`data.sqlite`, gitignored) managed by `src/db.js` (better-sqlite3): `users` and `lookups` tables plus the session store. The ipinfo response cache remains in-memory.
+
+**Auth**: session-based login (express-session + SQLite store, bcrypt passwords) in `src/auth.js` — routes `/api/auth/{register,login,logout,me}` and a `requireAuth` middleware. `/api/lookup` requires login; each batch is saved to history (`src/history.js`, routes `/api/history`). Requires `IPINFO_TOKEN` and `SESSION_SECRET` in `.env`.
 
 **Request flow** (`server.js` → `POST /api/lookup`), each stage in its own `src/` module:
 
@@ -24,7 +26,7 @@ This is a small Express app (`ip-lookup-app`) that batch-resolves IPs/domains to
 
 All tunables (ipinfo token/base URL, `MAX_IPS_PER_REQUEST`, cache TTL, lookup concurrency, port) live in `src/config.js`. The ipinfo token is read from the `IPINFO_TOKEN` environment variable — set it in `.env` (gitignored) before running.
 
-**Frontend** (`public/`): a single vanilla-JS page (no framework/build tool). `app.js` submits the form via `fetch` to `/api/lookup`, renders the results table/stats/error groups, and supports exporting results as CSV or JSON client-side. Served statically by Express from `public/`.
+**Frontend** (`public/`): vanilla JS, no framework/build tool, served statically by Express. Pages: `index.html` (lookup tool, requires session — redirects to login via `shared.js`), `login.html`/`signup.html` (`auth-pages.js`), `history.html` (`history.js`). `app.js` renders results/stats/errors, exports CSV/JSON client-side, and can re-render a saved session via `/?session=<id>`. Dark theme design tokens live in `style.css` (source design: `untitled.pen`, gitignored).
 
 **API testing**: `postman/` and `.postman/` hold a Postman workspace/collection setup for exercising the API manually.
 
