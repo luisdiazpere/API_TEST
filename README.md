@@ -37,6 +37,30 @@ npm start
 
 Create an account, run a batch, and check **account menu → Search history**.
 
+## Live testing with ngrok
+
+To expose the app publicly over HTTPS (e.g. for testing on another device or sharing a live URL):
+
+1. Download the ngrok binary and place it at `bin/ngrok` (the `bin/` directory is gitignored):
+
+   ```bash
+   # Arch Linux (AUR)
+   yay -S ngrok
+   # or download directly from https://ngrok.com/download and extract to bin/ngrok
+   ```
+
+2. With the app already running, start the tunnel:
+
+   ```bash
+   bin/ngrok http 3000
+   ```
+
+3. ngrok prints a public HTTPS URL (e.g. `https://xxxx.ngrok-free.dev`). Open that URL in any browser — it proxies straight to `localhost:3000`.
+
+4. The ngrok traffic inspector is available at **http://localhost:4040** while the tunnel is running. It shows every request and response in real time and lets you replay requests.
+
+> `bin/` and `.env` are gitignored — the ngrok binary and your credentials never get committed.
+
 ## API
 
 All routes are JSON over same-origin session cookies. Everything except register/login requires a session.
