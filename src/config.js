@@ -1,6 +1,9 @@
 const IPINFO_TOKEN = process.env.IPINFO_TOKEN;
 if (!IPINFO_TOKEN) throw new Error("IPINFO_TOKEN env var is required — set it in .env");
 
+const SESSION_SECRET = process.env.SESSION_SECRET;
+if (!SESSION_SECRET) throw new Error("SESSION_SECRET env var is required — set it in .env");
+
 const IPINFO_BASE_URL = "https://api.ipinfo.io/lite";
 const MAX_IPS_PER_REQUEST = 50;
 const CACHE_TTL_MS = 10 * 60 * 1000;
@@ -9,6 +12,7 @@ const PORT = 3000;
 
 module.exports = {
   IPINFO_TOKEN,
+  SESSION_SECRET,
   IPINFO_BASE_URL,
   MAX_IPS_PER_REQUEST,
   CACHE_TTL_MS,

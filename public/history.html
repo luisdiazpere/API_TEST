@@ -1,0 +1,62 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Search History — IP Lookup</title>
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet" />
+<link rel="stylesheet" href="style.css" />
+</head>
+<body>
+  <header class="top-bar">
+    <div style="display: flex; align-items: center; gap: 10px;">
+      <a class="brand" href="/">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="2" y1="12" x2="22" y2="12"/><path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"/></svg>
+        <span class="brand-title">IP Lookup</span>
+      </a>
+      <span class="breadcrumb-sep">/</span>
+      <span class="breadcrumb">History</span>
+    </div>
+    <div class="top-bar-right">
+      <a class="back-link" href="/">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="19" y1="12" x2="5" y2="12"/><polyline points="12 19 5 12 12 5"/></svg>
+        Back to Lookup
+      </a>
+      <div class="account-menu">
+        <button class="account-menu-btn" id="account-menu-btn" type="button">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
+          <span id="account-name"></span>
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"/></svg>
+        </button>
+        <div class="account-dropdown" id="account-dropdown" hidden>
+          <a href="/">Lookup tool</a>
+          <button type="button" class="logout" id="logout-btn">Sign out</button>
+        </div>
+      </div>
+    </div>
+  </header>
+
+  <main class="content">
+    <div class="heading-section">
+      <h1>Search History</h1>
+      <p>Every batch you've queried, saved to your account</p>
+    </div>
+
+    <div class="table-wrap">
+      <table class="history-table">
+        <thead>
+          <tr><th>Queried</th><th>Entries</th><th>Breakdown</th><th>Cache Hit</th><th></th></tr>
+        </thead>
+        <tbody id="history-body"></tbody>
+      </table>
+      <div class="empty-state" id="empty-state" hidden>
+        No lookups yet. Run your first batch from the lookup tool.
+      </div>
+    </div>
+  </main>
+
+  <script src="shared.js"></script>
+  <script src="history.js"></script>
+</body>
+</html>

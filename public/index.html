@@ -1,67 +1,117 @@
 <!DOCTYPE html>
-<html lang="es">
+<html lang="en">
 <head>
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-<title>Consulta de IPs - ipinfo.io</title>
+<title>IP Lookup</title>
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet" />
 <link rel="stylesheet" href="style.css" />
 </head>
 <body>
-  <main class="container">
-    <h1>Consulta de geolocalizacion de IPs y dominios</h1>
-    <p class="subtitle">Escribe IPs y/o dominios (o URLs) separados por coma, y/o sube un archivo .txt (uno por linea o separados por coma). Los dominios se resuelven via DNS antes de consultar ipinfo.io. Maximo 50 entradas por solicitud.</p>
-
-    <form id="lookup-form">
-      <label for="ips-text">IPs o dominios escritos</label>
-      <textarea id="ips-text" name="ips" rows="4" placeholder="8.8.8.8, google.com, https://example.com, 192.168.1.1"></textarea>
-
-      <label for="ips-file">Archivo .txt (opcional)</label>
-      <div class="file-row">
-        <input type="file" id="ips-file" name="file" accept=".txt" />
-        <button type="button" id="remove-file-btn" hidden>Quitar archivo</button>
+  <header class="top-bar">
+    <a class="brand" href="/">
+      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="2" y1="12" x2="22" y2="12"/><path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"/></svg>
+      <span class="brand-title">IP Lookup</span>
+    </a>
+    <div class="top-bar-right">
+      <span class="source-badge">ipinfo.io Lite</span>
+      <div class="account-menu">
+        <button class="account-menu-btn" id="account-menu-btn" type="button">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
+          <span id="account-name"></span>
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"/></svg>
+        </button>
+        <div class="account-dropdown" id="account-dropdown" hidden>
+          <a href="/history.html">Search history</a>
+          <button type="button" class="logout" id="logout-btn">Sign out</button>
+        </div>
       </div>
-      <span id="file-name" class="file-name"></span>
+    </div>
+  </header>
 
-      <button type="submit" id="submit-btn">Consultar</button>
-    </form>
+  <main class="content">
+    <section class="card">
+      <form id="lookup-form">
+        <div class="field">
+          <label for="ips-text">IPs / Domains</label>
+          <textarea id="ips-text" name="ips" rows="6" placeholder="8.8.8.8&#10;1.1.1.1&#10;github.com&#10;192.168.1.10, 10.0.0.5&#10;example.com&#10;…one per line, or comma-separated"></textarea>
+        </div>
 
-    <div id="status" class="status" hidden></div>
+        <div class="upload-row">
+          <div class="drop-zone" id="drop-zone">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
+            <span>Drop a .txt file here, or click to browse</span>
+          </div>
+          <input type="file" id="ips-file" name="file" accept=".txt" hidden />
+          <div class="file-chip" id="file-chip" hidden>
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>
+            <span id="file-name"></span>
+            <button type="button" id="remove-file-btn" title="Remove file">✕</button>
+          </div>
+        </div>
+
+        <div class="cta-row">
+          <button type="submit" class="btn-primary" id="submit-btn">Lookup</button>
+        </div>
+
+        <div class="status-row" id="status" hidden>
+          <div class="spinner" id="status-spinner"></div>
+          <span id="status-text"></span>
+        </div>
+      </form>
+    </section>
+
+    <section id="stats-section" hidden>
+      <div class="stats-row" id="stats-grid"></div>
+    </section>
 
     <section id="results-section" hidden>
-      <div class="export-bar">
-        <button id="export-csv">Descargar CSV</button>
-        <button id="export-json">Descargar JSON</button>
-      </div>
-
-      <h2>Resultados</h2>
-      <table id="results-table">
-        <thead>
-          <tr><th>IP</th><th>Resuelto desde</th><th>ASN</th><th>Organizacion</th><th>Pais</th><th>Continente</th><th>Cache</th></tr>
-        </thead>
-        <tbody></tbody>
-      </table>
-
-      <div id="errors-panel" hidden>
-        <h2>Errores</h2>
-        <div id="invalid-errors" class="error-group" hidden>
-          <h3>Formato invalido</h3>
-          <ul id="invalid-list"></ul>
+      <div class="results-header">
+        <div>
+          <h2>Results</h2>
+          <div class="results-subtitle" id="results-subtitle"></div>
         </div>
-        <div id="dns-errors" class="error-group" hidden>
-          <h3>Fallos de resolucion DNS</h3>
-          <ul id="dns-list"></ul>
-        </div>
-        <div id="api-errors" class="error-group" hidden>
-          <h3>Errores de ipinfo.io</h3>
-          <ul id="api-list"></ul>
+        <div class="export-group">
+          <button class="btn-secondary btn-small" id="export-csv">Export CSV</button>
+          <button class="btn-secondary btn-small" id="export-json">Export JSON</button>
         </div>
       </div>
 
-      <h2>Estadisticas</h2>
-      <div class="stats-grid" id="stats-grid"></div>
+      <div class="table-wrap" style="margin-top: 14px;">
+        <table id="results-table">
+          <thead>
+            <tr><th>IP</th><th>Resolved From</th><th>ASN</th><th>Organization</th><th>Country</th><th>Continent</th><th>Cached</th></tr>
+          </thead>
+          <tbody></tbody>
+        </table>
+      </div>
+
+      <div class="error-groups" id="errors-panel" hidden style="margin-top: 16px;">
+        <p class="error-groups-title">Parsing Issues</p>
+        <div class="error-group" id="invalid-errors" hidden>
+          <details>
+            <summary>Invalid format <span class="badge danger count-badge" id="invalid-count"></span></summary>
+            <ul id="invalid-list"></ul>
+          </details>
+        </div>
+        <div class="error-group" id="dns-errors" hidden>
+          <details>
+            <summary>DNS errors <span class="badge warning count-badge" id="dns-count"></span></summary>
+            <ul id="dns-list"></ul>
+          </details>
+        </div>
+        <div class="error-group" id="api-errors" hidden>
+          <details>
+            <summary>API errors <span class="badge danger count-badge" id="api-count"></span></summary>
+            <ul id="api-list"></ul>
+          </details>
+        </div>
+      </div>
     </section>
   </main>
 
+  <script src="shared.js"></script>
   <script src="app.js"></script>
 </body>
 </html>
