@@ -28,7 +28,7 @@ All tunables (ipinfo token/base URL, `MAX_IPS_PER_REQUEST`, cache TTL, lookup co
 
 **Frontend** (`public/`): vanilla JS, no framework/build tool, served statically by Express. Pages: `index.html` (lookup tool, requires session — redirects to login via `shared.js`), `login.html`/`signup.html` (`auth-pages.js`), `history.html` (`history.js`). `app.js` renders results/stats/errors, exports CSV/JSON client-side, and can re-render a saved session via `/?session=<id>`. Dark theme design tokens live in `style.css` (source design: `untitled.pen`, gitignored).
 
-**API testing**: `postman/` and `.postman/` hold a Postman workspace/collection setup for exercising the API manually.
+**API testing**: `postman/` and `.postman/` hold a local Postman workspace/collection setup for exercising the API manually (gitignored, not in the repo).
 
 ## Rules
 

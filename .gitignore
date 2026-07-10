@@ -1,6 +1,7 @@
 HOSTING.md
 .env
 .postman/
+postman/
 bin/
 *.pen
 *.sqlite
