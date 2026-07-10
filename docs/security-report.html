@@ -1,0 +1,995 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Security Assessment Report — ip-lookup-app</title>
+<style>
+  :root {
+    --bg: #0f1117;
+    --surface: #1a1d27;
+    --raised: #232733;
+    --border: #2a2e3a;
+    --border-strong: #3a3f4d;
+    --text: #e7e9ee;
+    --muted: #9aa1b3;
+    --dim: #6b7280;
+    --accent: #22e5ff;
+    --accent-bg: #0d2e36;
+    --green: #34d399;
+    --green-bg: #0f2e24;
+    --red: #f87171;
+    --red-bg: #3a1414;
+    --yellow: #fbbf24;
+    --yellow-bg: #3a2c0f;
+    --orange: #fb923c;
+    --orange-bg: #3b1e0e;
+    --blue: #60a5fa;
+    --blue-bg: #1e2e4a;
+    --radius: 10px;
+    --mono: "IBM Plex Mono", ui-monospace, monospace;
+    --sans: "Inter", system-ui, sans-serif;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: var(--sans);
+    font-size: 14px;
+    line-height: 1.6;
+    padding: 40px 24px 80px;
+  }
+  .page { max-width: 960px; margin: 0 auto; }
+
+  /* ---------- Header ---------- */
+  .report-header {
+    border-bottom: 1px solid var(--border);
+    padding-bottom: 28px;
+    margin-bottom: 40px;
+  }
+  .report-header h1 {
+    font-size: 26px;
+    font-weight: 700;
+    color: var(--text);
+    margin-bottom: 6px;
+  }
+  .report-meta {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 20px;
+    margin-top: 16px;
+    font-size: 13px;
+    color: var(--muted);
+  }
+  .report-meta span { display: flex; gap: 6px; align-items: center; }
+  .report-meta strong { color: var(--text); }
+
+  /* ---------- Score summary ---------- */
+  .score-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+    gap: 14px;
+    margin-bottom: 40px;
+  }
+  .score-tile {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: 18px;
+    text-align: center;
+  }
+  .score-tile .number {
+    font-size: 32px;
+    font-weight: 700;
+    font-family: var(--mono);
+    line-height: 1;
+  }
+  .score-tile .label { font-size: 12px; color: var(--muted); margin-top: 6px; letter-spacing: 0.04em; text-transform: uppercase; }
+  .score-tile.critical .number { color: #ef4444; }
+  .score-tile.high .number { color: var(--orange); }
+  .score-tile.medium .number { color: var(--yellow); }
+  .score-tile.low .number { color: var(--blue); }
+  .score-tile.info .number { color: var(--muted); }
+  .score-tile.pass .number { color: var(--green); }
+
+  /* ---------- Section headings ---------- */
+  .section {
+    margin-bottom: 48px;
+  }
+  .section-title {
+    font-size: 18px;
+    font-weight: 600;
+    margin-bottom: 16px;
+    padding-bottom: 8px;
+    border-bottom: 1px solid var(--border);
+    display: flex;
+    align-items: center;
+    gap: 10px;
+  }
+  .section-title .num {
+    background: var(--raised);
+    color: var(--accent);
+    border-radius: 6px;
+    padding: 2px 8px;
+    font-size: 13px;
+    font-family: var(--mono);
+  }
+  p { margin-bottom: 10px; color: var(--muted); font-size: 13.5px; }
+  p strong { color: var(--text); }
+
+  /* ---------- Severity badge ---------- */
+  .sev {
+    display: inline-block;
+    font-size: 11px;
+    font-weight: 700;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+    border-radius: 4px;
+    padding: 3px 8px;
+  }
+  .sev.critical { background: rgba(239,68,68,.15); color: #ef4444; }
+  .sev.high     { background: var(--orange-bg); color: var(--orange); }
+  .sev.medium   { background: var(--yellow-bg); color: var(--yellow); }
+  .sev.low      { background: var(--blue-bg);   color: var(--blue); }
+  .sev.info     { background: var(--raised);    color: var(--muted); }
+  .sev.pass     { background: var(--green-bg);  color: var(--green); }
+
+  /* ---------- Finding card ---------- */
+  .finding {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    margin-bottom: 20px;
+    overflow: hidden;
+  }
+  .finding-header {
+    display: flex;
+    align-items: flex-start;
+    gap: 14px;
+    padding: 18px 20px;
+    cursor: pointer;
+    user-select: none;
+  }
+  .finding-header:hover { background: var(--raised); }
+  .finding-id {
+    font-family: var(--mono);
+    font-size: 12px;
+    color: var(--dim);
+    padding-top: 1px;
+    white-space: nowrap;
+  }
+  .finding-title { font-size: 15px; font-weight: 600; flex: 1; }
+  .finding-body {
+    border-top: 1px solid var(--border);
+    padding: 20px;
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+  }
+  .finding[open] .finding-header { background: var(--raised); }
+
+  .meta-row {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 12px;
+    font-size: 12.5px;
+  }
+  .meta-chip {
+    background: var(--raised);
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    padding: 4px 10px;
+    display: flex;
+    gap: 6px;
+    align-items: center;
+  }
+  .meta-chip .chip-label { color: var(--dim); }
+  .meta-chip .chip-val   { color: var(--text); font-weight: 500; }
+
+  .finding-section-label {
+    font-size: 11px;
+    font-weight: 700;
+    letter-spacing: 0.07em;
+    text-transform: uppercase;
+    color: var(--dim);
+    margin-bottom: 6px;
+  }
+  .finding-text { color: var(--muted); font-size: 13.5px; line-height: 1.65; }
+
+  /* ---------- Code blocks ---------- */
+  pre {
+    background: #0c0e14;
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 14px 16px;
+    font-family: var(--mono);
+    font-size: 12.5px;
+    color: #c9d1d9;
+    overflow-x: auto;
+    line-height: 1.55;
+    margin: 0;
+  }
+  pre .comment { color: #555d6b; }
+  pre .key     { color: var(--accent); }
+  pre .string  { color: var(--green); }
+  pre .number  { color: var(--orange); }
+  pre .cmd     { color: var(--yellow); }
+
+  /* ---------- Inline code ---------- */
+  code {
+    font-family: var(--mono);
+    font-size: 12px;
+    background: var(--raised);
+    border: 1px solid var(--border);
+    border-radius: 4px;
+    padding: 1px 5px;
+    color: var(--accent);
+  }
+
+  /* ---------- Tables ---------- */
+  .table-wrap { border: 1px solid var(--border); border-radius: var(--radius); overflow: hidden; }
+  table { width: 100%; border-collapse: collapse; }
+  thead th {
+    background: var(--raised);
+    padding: 10px 14px;
+    font-size: 11px;
+    font-weight: 600;
+    letter-spacing: 0.05em;
+    text-transform: uppercase;
+    color: var(--dim);
+    text-align: left;
+  }
+  tbody td {
+    padding: 10px 14px;
+    border-top: 1px solid var(--border);
+    font-size: 13px;
+    vertical-align: top;
+  }
+  tbody tr:hover td { background: var(--surface); }
+  .mono-cell { font-family: var(--mono); font-size: 12px; }
+
+  /* ---------- Alert box ---------- */
+  .alert {
+    border-radius: 8px;
+    padding: 14px 16px;
+    font-size: 13px;
+    line-height: 1.55;
+  }
+  .alert.red    { background: var(--red-bg);    border: 1px solid rgba(248,113,113,.2); color: #fca5a5; }
+  .alert.yellow { background: var(--yellow-bg); border: 1px solid rgba(251,191,36,.2);  color: #fde68a; }
+  .alert.green  { background: var(--green-bg);  border: 1px solid rgba(52,211,153,.2);  color: #6ee7b7; }
+  .alert.blue   { background: var(--blue-bg);   border: 1px solid rgba(96,165,250,.2);  color: #93c5fd; }
+  .alert strong { font-weight: 600; }
+
+  /* ---------- Details/summary for findings ---------- */
+  details summary { list-style: none; }
+  details summary::-webkit-details-marker { display: none; }
+
+  /* ---------- Test result row ---------- */
+  .test-result {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 8px 0;
+    border-bottom: 1px solid var(--border);
+    font-size: 13px;
+  }
+  .test-result:last-child { border-bottom: none; }
+  .test-dot {
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+    flex-shrink: 0;
+  }
+  .dot-pass { background: var(--green); }
+  .dot-fail { background: var(--red); }
+  .dot-warn { background: var(--yellow); }
+  .test-name { flex: 1; color: var(--muted); }
+  .test-verdict { font-family: var(--mono); font-size: 11px; padding: 2px 6px; border-radius: 4px; }
+  .verdict-pass   { background: var(--green-bg);  color: var(--green); }
+  .verdict-vuln   { background: var(--red-bg);    color: var(--red); }
+  .verdict-medium { background: var(--yellow-bg); color: var(--yellow); }
+  .verdict-low    { background: var(--blue-bg);   color: var(--blue); }
+  .verdict-info   { background: var(--raised);    color: var(--muted); }
+
+  /* ---------- Footer ---------- */
+  .footer {
+    border-top: 1px solid var(--border);
+    padding-top: 24px;
+    margin-top: 40px;
+    color: var(--dim);
+    font-size: 12px;
+  }
+</style>
+</head>
+<body>
+<div class="page">
+
+  <!-- ══════════════ HEADER ══════════════ -->
+  <div class="report-header">
+    <h1>Security Assessment Report</h1>
+    <p style="color:var(--muted);margin-top:4px;">ip-lookup-app — authentication, input handling, and API injection surface</p>
+    <div class="report-meta">
+      <span><strong>Date:</strong> 2026-07-10</span>
+      <span><strong>Scope:</strong> localhost:3000 (Express, SQLite, bcrypt)</span>
+      <span><strong>Method:</strong> Black-box + white-box (source review + live testing)</span>
+      <span><strong>Tester:</strong> Claude Code + Playwright MCP + curl</span>
+      <span><strong>Branch:</strong> remove-postman</span>
+    </div>
+  </div>
+
+  <!-- ══════════════ SCORE SUMMARY ══════════════ -->
+  <div class="score-grid">
+    <div class="score-tile critical"><div class="number">0</div><div class="label">Critical</div></div>
+    <div class="score-tile high"><div class="number">0</div><div class="label">High</div></div>
+    <div class="score-tile medium"><div class="number">3</div><div class="label">Medium</div></div>
+    <div class="score-tile low"><div class="number">4</div><div class="label">Low</div></div>
+    <div class="score-tile info"><div class="number">2</div><div class="label">Informational</div></div>
+    <div class="score-tile pass"><div class="number">11</div><div class="label">Tests Passed</div></div>
+  </div>
+
+  <!-- ══════════════ EXECUTIVE SUMMARY ══════════════ -->
+  <div class="section">
+    <div class="section-title"><span class="num">01</span> Executive Summary</div>
+    <p>
+      A targeted security assessment was conducted against the <strong>ip-lookup-app</strong> Express application covering
+      its authentication subsystem (<code>/api/auth</code>), lookup endpoint (<code>/api/lookup</code>), and history API
+      (<code>/api/history</code>). 29 discrete tests were executed combining live HTTP probing and static source review.
+    </p>
+    <p>
+      <strong>No critical or high-severity vulnerabilities were found.</strong> The most significant issues are three
+      medium-severity findings: the absence of rate limiting on authentication endpoints (enabling credential brute-force),
+      email enumeration via distinct register error messages, and a bcrypt 72-character password truncation behavior that
+      silently weakens long passwords.
+    </p>
+    <p>
+      All SQL queries use parameterized prepared statements — the app is <strong>not vulnerable to SQL injection</strong>.
+      IDOR, session fixation, SSRF, and mass-assignment attacks were all confirmed mitigated. Four low-severity hardening
+      gaps (missing security headers, framework fingerprint, bogon IPs sent to external API, missing Secure cookie flag)
+      and two informational findings complete the picture.
+    </p>
+    <div class="alert yellow" style="margin-top:14px;">
+      <strong>Priority action:</strong> Add rate limiting to <code>/api/auth/login</code> and
+      <code>/api/auth/register</code>, and cap password input at 72 characters to prevent silent truncation.
+    </div>
+  </div>
+
+  <!-- ══════════════ SCOPE & METHODOLOGY ══════════════ -->
+  <div class="section">
+    <div class="section-title"><span class="num">02</span> Scope &amp; Methodology</div>
+    <p><strong>Endpoints tested:</strong></p>
+    <div class="table-wrap" style="margin-bottom:16px;">
+      <table>
+        <thead><tr><th>Endpoint</th><th>Method(s)</th><th>Auth Required</th><th>Tests Run</th></tr></thead>
+        <tbody>
+          <tr><td class="mono-cell">/api/auth/register</td><td>POST</td><td>No</td><td>SQLi, mass assignment, email enumeration, length limits</td></tr>
+          <tr><td class="mono-cell">/api/auth/login</td><td>POST</td><td>No</td><td>SQLi (4 payloads), brute force, bcrypt truncation, body size</td></tr>
+          <tr><td class="mono-cell">/api/auth/logout</td><td>POST</td><td>Session</td><td>Session destruction</td></tr>
+          <tr><td class="mono-cell">/api/auth/me</td><td>GET</td><td>Session</td><td>Auth bypass</td></tr>
+          <tr><td class="mono-cell">/api/lookup</td><td>POST</td><td>Session</td><td>SSRF (7 vectors), XSS, input oversize, null bytes, content-type confusion</td></tr>
+          <tr><td class="mono-cell">/api/history</td><td>GET</td><td>Session</td><td>Auth bypass, IDOR</td></tr>
+          <tr><td class="mono-cell">/api/history/:id</td><td>GET, DELETE</td><td>Session</td><td>IDOR, SQLi in path param, auth bypass</td></tr>
+        </tbody>
+      </table>
+    </div>
+    <p><strong>Test methodology:</strong> Black-box HTTP probing via <code>curl</code> with structured attack payloads, supplemented by white-box review of all <code>src/</code> modules and <code>server.js</code>. Cookie jars simulated two independent user sessions (victim + attacker) for IDOR testing.</p>
+    <p><strong>Tools:</strong> curl 8.x, Python 3 for timing and payload generation, Playwright MCP for browser-level verification, Node.js better-sqlite3 source inspection.</p>
+  </div>
+
+  <!-- ══════════════ TEST RESULTS OVERVIEW ══════════════ -->
+  <div class="section">
+    <div class="section-title"><span class="num">03</span> All Test Results</div>
+    <div class="finding" style="overflow:visible;">
+      <div class="finding-body" style="border-top:none; padding: 16px 20px;">
+        <div class="test-result"><span class="test-dot dot-fail"></span><span class="test-name">T22 — Brute force: 20 rapid login attempts, no lockout</span><span class="test-verdict verdict-medium">MEDIUM</span></div>
+        <div class="test-result"><span class="test-dot dot-fail"></span><span class="test-name">T08 — Email enumeration via register error messages</span><span class="test-verdict verdict-medium">MEDIUM</span></div>
+        <div class="test-result"><span class="test-dot dot-fail"></span><span class="test-name">T23 — bcrypt 72-char truncation: 73-char password accepted for 72-char hash</span><span class="test-verdict verdict-medium">MEDIUM</span></div>
+        <div class="test-result"><span class="test-dot dot-warn"></span><span class="test-name">T14 — Missing security headers (CSP, X-Frame-Options, X-Content-Type-Options, Referrer-Policy)</span><span class="test-verdict verdict-low">LOW</span></div>
+        <div class="test-result"><span class="test-dot dot-warn"></span><span class="test-name">T16 — X-Powered-By: Express header exposes framework</span><span class="test-verdict verdict-low">LOW</span></div>
+        <div class="test-result"><span class="test-dot dot-warn"></span><span class="test-name">T11 — Bogon IPs (RFC1918) sent to external ipinfo.io API</span><span class="test-verdict verdict-low">LOW</span></div>
+        <div class="test-result"><span class="test-dot dot-warn"></span><span class="test-name">T25/T27 — Session cookie lacks Secure flag (HTTP-only deployment risk)</span><span class="test-verdict verdict-low">LOW</span></div>
+        <div class="test-result"><span class="test-dot dot-warn"></span><span class="test-name">T24 — No max-length validation on name/email in register</span><span class="test-verdict verdict-info">INFO</span></div>
+        <div class="test-result"><span class="test-dot dot-warn"></span><span class="test-name">T28 — JSON body >50KB returns non-JSON HTML error (parser exception leak)</span><span class="test-verdict verdict-info">INFO</span></div>
+        <div class="test-result"><span class="test-dot dot-pass"></span><span class="test-name">T03a–d — SQL injection (login email field): 4 payloads, all blocked</span><span class="test-verdict verdict-pass">SAFE</span></div>
+        <div class="test-result"><span class="test-dot dot-pass"></span><span class="test-name">T04a–b — SQL injection (register name/email): blocked by regex + parameterized query</span><span class="test-verdict verdict-pass">SAFE</span></div>
+        <div class="test-result"><span class="test-dot dot-pass"></span><span class="test-name">T06a–c — SQL injection (history :id path param): blocked</span><span class="test-verdict verdict-pass">SAFE</span></div>
+        <div class="test-result"><span class="test-dot dot-pass"></span><span class="test-name">T07a–c — IDOR: attacker cannot access or delete victim history records</span><span class="test-verdict verdict-pass">SAFE</span></div>
+        <div class="test-result"><span class="test-dot dot-pass"></span><span class="test-name">T10a–d, T26a–c — SSRF via lookup (localhost, 127.0.0.1, internal hostnames, file://, URLs)</span><span class="test-verdict verdict-pass">SAFE</span></div>
+        <div class="test-result"><span class="test-dot dot-pass"></span><span class="test-name">T12a–d — Auth bypass: all protected routes return 401 without valid session</span><span class="test-verdict verdict-pass">SAFE</span></div>
+        <div class="test-result"><span class="test-dot dot-pass"></span><span class="test-name">T13 — Stored XSS: &lt;script&gt; and img onerror payloads rejected, not stored</span><span class="test-verdict verdict-pass">SAFE</span></div>
+        <div class="test-result"><span class="test-dot dot-pass"></span><span class="test-name">T17 — Mass assignment: role/id injection fields silently ignored</span><span class="test-verdict verdict-pass">SAFE</span></div>
+        <div class="test-result"><span class="test-dot dot-pass"></span><span class="test-name">T18b — Oversized lookup input: MAX_IPS_PER_REQUEST enforced (50 entries)</span><span class="test-verdict verdict-pass">SAFE</span></div>
+        <div class="test-result"><span class="test-dot dot-pass"></span><span class="test-name">T19 — Content-type confusion: text/plain body not parsed as JSON</span><span class="test-verdict verdict-pass">SAFE</span></div>
+        <div class="test-result"><span class="test-dot dot-pass"></span><span class="test-name">T29 — CSRF: no CORS headers; SameSite=Lax blocks cross-origin POST cookie attachment</span><span class="test-verdict verdict-pass">SAFE</span></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ══════════════ FINDINGS ══════════════ -->
+  <div class="section">
+    <div class="section-title"><span class="num">04</span> Findings</div>
+
+    <!-- ─── FINDING 01: Brute Force ─────────────────────────────── -->
+    <details class="finding" open>
+      <summary class="finding-header">
+        <span class="finding-id">SEC-01</span>
+        <span class="finding-title">No rate limiting on authentication endpoints — credential brute force possible</span>
+        <span class="sev medium">Medium</span>
+      </summary>
+      <div class="finding-body">
+        <div class="meta-row">
+          <div class="meta-chip"><span class="chip-label">CWE</span><span class="chip-val">CWE-307</span></div>
+          <div class="meta-chip"><span class="chip-label">OWASP</span><span class="chip-val">A07:2021 — Identification &amp; Authentication Failures</span></div>
+          <div class="meta-chip"><span class="chip-label">Affected</span><span class="chip-val">/api/auth/login, /api/auth/register</span></div>
+          <div class="meta-chip"><span class="chip-label">Test</span><span class="chip-val">T22</span></div>
+        </div>
+
+        <div>
+          <div class="finding-section-label">Description</div>
+          <p class="finding-text">
+            The <code>express-rate-limit</code> middleware is only applied to <code>/api/lookup</code>.
+            <code>/api/auth/login</code> and <code>/api/auth/register</code> have no rate limiting, account lockout,
+            CAPTCHA, or exponential backoff. An attacker can send thousands of login attempts per minute
+            without any server-side throttling.
+          </p>
+        </div>
+
+        <div>
+          <div class="finding-section-label">Evidence</div>
+          <pre><span class="comment"># T22: 20 rapid attempts — all received HTTP 401 (no 429 ever returned)</span>
+<span class="cmd">for i in $(seq 1 20); do</span>
+  curl -s -o /dev/null -w "%{http_code}" \
+    -X POST http://localhost:3000/api/auth/login \
+    -H "Content-Type: application/json" \
+    -d '{"email":"victim@example.com","password":"guess$i"}'
+<span class="cmd">done</span>
+<span class="comment"># → 401 401 401 401 401 401 401 401 401 401 ... (never 429)</span></pre>
+        </div>
+
+        <div>
+          <div class="finding-section-label">How to Reproduce</div>
+          <p class="finding-text">
+            1. Obtain a target email address (or enumerate one via SEC-02 below).<br>
+            2. Run the above loop with a password wordlist (e.g. <code>rockyou.txt</code>).<br>
+            3. Any HTTP 200 response reveals the correct password.
+          </p>
+        </div>
+
+        <div>
+          <div class="finding-section-label">Recommended Fix</div>
+          <pre><span class="comment">// server.js — add a separate limiter for auth routes</span>
+<span class="key">const</span> authLimiter = rateLimit({
+  windowMs: <span class="number">15</span> * <span class="number">60</span> * <span class="number">1000</span>,  <span class="comment">// 15 minutes</span>
+  max: <span class="number">10</span>,                    <span class="comment">// 10 login attempts per window</span>
+  standardHeaders: <span class="string">true</span>,
+  legacyHeaders: <span class="string">false</span>,
+  message: { error: <span class="string">"Demasiados intentos. Intenta de nuevo en 15 minutos."</span> },
+});
+
+app.use(<span class="string">"/api/auth/login"</span>, authLimiter);
+app.use(<span class="string">"/api/auth/register"</span>, authLimiter);</pre>
+        </div>
+      </div>
+    </details>
+
+    <!-- ─── FINDING 02: Email Enumeration ───────────────────────── -->
+    <details class="finding">
+      <summary class="finding-header">
+        <span class="finding-id">SEC-02</span>
+        <span class="finding-title">Email enumeration via distinct error message on register</span>
+        <span class="sev medium">Medium</span>
+      </summary>
+      <div class="finding-body">
+        <div class="meta-row">
+          <div class="meta-chip"><span class="chip-label">CWE</span><span class="chip-val">CWE-204</span></div>
+          <div class="meta-chip"><span class="chip-label">OWASP</span><span class="chip-val">A07:2021 — Identification &amp; Authentication Failures</span></div>
+          <div class="meta-chip"><span class="chip-label">Affected</span><span class="chip-val">POST /api/auth/register</span></div>
+          <div class="meta-chip"><span class="chip-label">Test</span><span class="chip-val">T08</span></div>
+        </div>
+
+        <div>
+          <div class="finding-section-label">Description</div>
+          <p class="finding-text">
+            When a <code>POST /api/auth/register</code> request is made with an email that already exists,
+            the server returns <strong>"Ya existe una cuenta con ese email."</strong> (HTTP 409).
+            When the email does not exist, registration succeeds (HTTP 201). This behavioral difference
+            allows an attacker to enumerate which email addresses have registered accounts, which can
+            then be targeted with credential stuffing or phishing.
+          </p>
+        </div>
+
+        <div>
+          <div class="finding-section-label">Evidence</div>
+          <pre><span class="comment"># Existing email → reveals account existence</span>
+curl -s -X POST /api/auth/register \
+  -d '{"email":"testuser@example.com","password":"x","name":"x"}'
+<span class="comment"># → {"error":"Ya existe una cuenta con ese email."}</span>
+
+<span class="comment"># Non-existing email → registration succeeds</span>
+curl -s -X POST /api/auth/register \
+  -d '{"email":"nobody@example.com","password":"Password123","name":"x"}'
+<span class="comment"># → {"name":"x","email":"nobody@example.com"}</span></pre>
+        </div>
+
+        <div>
+          <div class="finding-section-label">Recommended Fix</div>
+          <p class="finding-text">
+            Return a generic success-like message regardless of whether the email exists. For this prototype
+            a simple approach is to always return HTTP 200 with a consistent message:
+          </p>
+          <pre><span class="comment">// src/auth.js — replace the 409 branch</span>
+<span class="key">if</span> (existing) {
+  <span class="comment">// Do NOT reveal the email exists. Return same-looking success.</span>
+  <span class="key">return</span> res.status(<span class="number">200</span>).json({
+    message: <span class="string">"Si esa dirección no está registrada, la cuenta ha sido creada."</span>
+  });
+}</pre>
+          <div class="alert blue" style="margin-top:10px;">
+            Note: A fully hardened solution would also send a confirmation email and only activate the account on click,
+            which naturally prevents enumeration without degrading UX.
+          </div>
+        </div>
+      </div>
+    </details>
+
+    <!-- ─── FINDING 03: bcrypt truncation ────────────────────────── -->
+    <details class="finding">
+      <summary class="finding-header">
+        <span class="finding-id">SEC-03</span>
+        <span class="finding-title">bcrypt silently truncates passwords at 72 characters</span>
+        <span class="sev medium">Medium</span>
+      </summary>
+      <div class="finding-body">
+        <div class="meta-row">
+          <div class="meta-chip"><span class="chip-label">CWE</span><span class="chip-val">CWE-916</span></div>
+          <div class="meta-chip"><span class="chip-label">OWASP</span><span class="chip-val">A07:2021 — Identification &amp; Authentication Failures</span></div>
+          <div class="meta-chip"><span class="chip-label">Affected</span><span class="chip-val">POST /api/auth/register, POST /api/auth/login</span></div>
+          <div class="meta-chip"><span class="chip-label">Test</span><span class="chip-val">T23</span></div>
+        </div>
+
+        <div>
+          <div class="finding-section-label">Description</div>
+          <p class="finding-text">
+            The bcrypt algorithm (used via the <code>bcrypt</code> npm package) truncates input to
+            <strong>72 bytes</strong> before hashing. There is no maximum length enforced in the application,
+            so a user who registers with a 100-character password can log in with any password that shares
+            the same first 72 characters, regardless of what follows. This is a well-known bcrypt limitation
+            (documented since 2012) that the application does not compensate for.
+          </p>
+          <p class="finding-text">
+            <strong>Impact:</strong> If a user believes they have a unique 100-character passphrase, an attacker
+            who obtains the first 72 characters (e.g. via a partial leak) can authenticate successfully.
+          </p>
+        </div>
+
+        <div>
+          <div class="finding-section-label">Evidence</div>
+          <pre><span class="comment"># Register with 72 'A' chars</span>
+PASS72=$(python3 -c "print('A'*72)")
+curl -X POST /api/auth/register -d "{...,\"password\":\"$PASS72\"}"
+<span class="comment"># → 201 Created</span>
+
+<span class="comment"># Login with 73 chars (same 72-char prefix + 'B')</span>
+PASS73=$(python3 -c "print('A'*72 + 'B')")
+curl -X POST /api/auth/login -d "{\"email\":\"...\",\"password\":\"$PASS73\"}"
+<span class="comment"># → 200 OK {"name":"TruncTest","email":"..."}</span>
+
+<span class="comment"># Login with 100 chars (still the same 72-char prefix)</span>
+PASS100=$(python3 -c "print('A'*100)")
+curl -X POST /api/auth/login -d "{\"email\":\"...\",\"password\":\"$PASS100\"}"
+<span class="comment"># → 200 OK — login succeeds!</span></pre>
+        </div>
+
+        <div>
+          <div class="finding-section-label">Recommended Fix</div>
+          <p class="finding-text">Two approaches — apply both for defense in depth:</p>
+          <pre><span class="comment">// src/auth.js — Option A: cap input at 72 chars</span>
+<span class="key">if</span> (!password || password.length &lt; <span class="number">8</span> || password.length &gt; <span class="number">72</span>) {
+  <span class="key">return</span> res.status(<span class="number">400</span>).json({ error: <span class="string">"La contraseña debe tener entre 8 y 72 caracteres."</span> });
+}
+
+<span class="comment">// src/auth.js — Option B: pre-hash with SHA-256 before bcrypt (allows long passwords)</span>
+<span class="key">const</span> crypto = require(<span class="string">"crypto"</span>);
+<span class="key">function</span> preparePassword(raw) {
+  <span class="key">return</span> crypto.createHash(<span class="string">"sha256"</span>).update(raw).digest(<span class="string">"base64"</span>);
+}
+<span class="comment">// Replace: bcrypt.hash(password, SALT_ROUNDS)</span>
+<span class="comment">// With:    bcrypt.hash(preparePassword(password), SALT_ROUNDS)</span></pre>
+          <div class="alert yellow" style="margin-top:10px;">
+            <strong>Caution:</strong> Option B is a breaking change — existing password hashes cannot be
+            validated without a migration step. Option A is the simpler immediate fix.
+          </div>
+        </div>
+      </div>
+    </details>
+
+    <!-- ─── FINDING 04: Missing headers ─────────────────────────── -->
+    <details class="finding">
+      <summary class="finding-header">
+        <span class="finding-id">SEC-04</span>
+        <span class="finding-title">Missing HTTP security headers on all main routes</span>
+        <span class="sev low">Low</span>
+      </summary>
+      <div class="finding-body">
+        <div class="meta-row">
+          <div class="meta-chip"><span class="chip-label">CWE</span><span class="chip-val">CWE-693</span></div>
+          <div class="meta-chip"><span class="chip-label">OWASP</span><span class="chip-val">A05:2021 — Security Misconfiguration</span></div>
+          <div class="meta-chip"><span class="chip-label">Test</span><span class="chip-val">T14</span></div>
+        </div>
+        <div>
+          <div class="finding-section-label">Description</div>
+          <p class="finding-text">
+            HTTP responses from all main routes lack the following security headers, which are standard
+            defense-in-depth controls. Note: Express's own error handler adds some of these only on 4xx/5xx
+            error responses, not on normal <code>200</code> success responses.
+          </p>
+          <div class="table-wrap">
+            <table>
+              <thead><tr><th>Missing Header</th><th>Risk Without It</th></tr></thead>
+              <tbody>
+                <tr><td><code>Content-Security-Policy</code></td><td>XSS payloads that reach the DOM can execute inline scripts or load external resources</td></tr>
+                <tr><td><code>X-Frame-Options</code></td><td>The app can be embedded in an iframe (clickjacking)</td></tr>
+                <tr><td><code>X-Content-Type-Options: nosniff</code></td><td>Browser may MIME-sniff responses and execute non-HTML as HTML</td></tr>
+                <tr><td><code>Referrer-Policy</code></td><td>Full URL (including session-sensitive query params) sent to third parties in Referer header</td></tr>
+                <tr><td><code>Permissions-Policy</code></td><td>Camera/mic/geolocation APIs remain accessible to injected content</td></tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+        <div>
+          <div class="finding-section-label">Recommended Fix</div>
+          <pre><span class="comment">// server.js — add helmet (covers all headers above in one line)</span>
+npm install helmet
+
+<span class="key">const</span> helmet = require(<span class="string">"helmet"</span>);
+app.use(helmet());   <span class="comment">// sets 11 security headers including all of the above</span></pre>
+        </div>
+      </div>
+    </details>
+
+    <!-- ─── FINDING 05: X-Powered-By ────────────────────────────── -->
+    <details class="finding">
+      <summary class="finding-header">
+        <span class="finding-id">SEC-05</span>
+        <span class="finding-title">X-Powered-By: Express header reveals framework and version family</span>
+        <span class="sev low">Low</span>
+      </summary>
+      <div class="finding-body">
+        <div class="meta-row">
+          <div class="meta-chip"><span class="chip-label">CWE</span><span class="chip-val">CWE-200</span></div>
+          <div class="meta-chip"><span class="chip-label">Test</span><span class="chip-val">T16</span></div>
+        </div>
+        <div>
+          <div class="finding-section-label">Evidence</div>
+          <pre>curl -sI http://localhost:3000/
+<span class="comment"># → X-Powered-By: Express</span></pre>
+        </div>
+        <div>
+          <div class="finding-section-label">Recommended Fix</div>
+          <pre><span class="comment">// server.js (or resolved by helmet above)</span>
+app.disable(<span class="string">"x-powered-by"</span>);</pre>
+        </div>
+      </div>
+    </details>
+
+    <!-- ─── FINDING 06: Bogon IPs to API ────────────────────────── -->
+    <details class="finding">
+      <summary class="finding-header">
+        <span class="finding-id">SEC-06</span>
+        <span class="finding-title">RFC1918/bogon IPs forwarded to external ipinfo.io API</span>
+        <span class="sev low">Low</span>
+      </summary>
+      <div class="finding-body">
+        <div class="meta-row">
+          <div class="meta-chip"><span class="chip-label">CWE</span><span class="chip-val">CWE-918 (partial)</span></div>
+          <div class="meta-chip"><span class="chip-label">Affected</span><span class="chip-val">POST /api/lookup via src/ipinfoClient.js</span></div>
+          <div class="meta-chip"><span class="chip-label">Test</span><span class="chip-val">T11, T20</span></div>
+        </div>
+        <div>
+          <div class="finding-section-label">Description</div>
+          <p class="finding-text">
+            Private IPv4 ranges (<code>10.x.x.x</code>, <code>172.16.x.x–172.31.x.x</code>,
+            <code>192.168.x.x</code>), loopback (<code>127.x.x.x</code>), and link-local (<code>169.254.x.x</code>)
+            pass the <code>isValidIp()</code> check and are forwarded to the <code>ipinfoClient.lookupIps()</code> call.
+            The bogon detection only happens inside ipinfo.io's API response — the result has <code>bogon: true</code> —
+            meaning internal addresses are still sent to a third-party service.
+          </p>
+          <p class="finding-text">
+            <strong>Impact:</strong> Wastes API quota; discloses private IP addresses the user submits to ipinfo.io;
+            in a future network-adjacent deployment, could reveal internal IP topology to an external service.
+          </p>
+        </div>
+        <div>
+          <div class="finding-section-label">Evidence</div>
+          <pre><span class="comment"># T11: bogon IPs show apiCalls: 3 (sent to external API)</span>
+curl ... -F "ips=10.0.0.1,192.168.1.1,172.16.0.1"
+<span class="comment"># → "meta": {"cacheHits":0,"apiCalls":3}</span></pre>
+        </div>
+        <div>
+          <div class="finding-section-label">Recommended Fix</div>
+          <pre><span class="comment">// server.js — filter bogons before calling lookupIps()</span>
+<span class="key">const</span> ipRangeCheck = require(<span class="string">"ip-range-check"</span>);  <span class="comment">// or hand-roll with net module</span>
+<span class="key">const</span> BOGON_RANGES = [
+  <span class="string">"10.0.0.0/8"</span>, <span class="string">"172.16.0.0/12"</span>, <span class="string">"192.168.0.0/16"</span>,
+  <span class="string">"127.0.0.0/8"</span>, <span class="string">"169.254.0.0/16"</span>, <span class="string">"::1/128"</span>, <span class="string">"fc00::/7"</span>
+];
+<span class="key">function</span> isBogon(ip) { <span class="key">return</span> ipRangeCheck(ip, BOGON_RANGES); }
+
+<span class="comment">// Before lookupIps(), split the list:</span>
+<span class="key">const</span> bogonEntries = ipEntries.filter(e => isBogon(e.ip));
+<span class="key">const</span> publicEntries = ipEntries.filter(e => !isBogon(e.ip));
+<span class="comment">// Only send publicEntries to lookupIps()
+// Merge bogonEntries back with {bogon: true} results directly</span></pre>
+        </div>
+      </div>
+    </details>
+
+    <!-- ─── FINDING 07: No Secure flag ──────────────────────────── -->
+    <details class="finding">
+      <summary class="finding-header">
+        <span class="finding-id">SEC-07</span>
+        <span class="finding-title">Session cookie missing Secure flag — risk for HTTP deployments</span>
+        <span class="sev low">Low</span>
+      </summary>
+      <div class="finding-body">
+        <div class="meta-row">
+          <div class="meta-chip"><span class="chip-label">CWE</span><span class="chip-val">CWE-614</span></div>
+          <div class="meta-chip"><span class="chip-label">OWASP</span><span class="chip-val">A02:2021 — Cryptographic Failures</span></div>
+          <div class="meta-chip"><span class="chip-label">Test</span><span class="chip-val">T25, T27</span></div>
+        </div>
+        <div>
+          <div class="finding-section-label">Evidence</div>
+          <pre>Set-Cookie: connect.sid=...; Path=/; Expires=...; HttpOnly; SameSite=Lax
+<span class="comment"># ↑ No "Secure" attribute — cookie sent over HTTP</span></pre>
+        </div>
+        <div>
+          <div class="finding-section-label">Description</div>
+          <p class="finding-text">
+            The session cookie is configured with <code>HttpOnly</code> and <code>SameSite=Lax</code>
+            (both correct) but lacks the <code>Secure</code> flag. On any HTTP deployment the cookie
+            can be intercepted in transit by a network observer. This is a prototype so there is no
+            HTTPS configuration, but the fix should be applied before any real deployment.
+          </p>
+        </div>
+        <div>
+          <div class="finding-section-label">Recommended Fix</div>
+          <pre><span class="comment">// server.js — enable Secure flag conditionally</span>
+cookie: {
+  httpOnly: <span class="string">true</span>,
+  sameSite: <span class="string">"lax"</span>,
+  secure: process.env.NODE_ENV === <span class="string">"production"</span>,
+  maxAge: <span class="number">7</span> * <span class="number">24</span> * <span class="number">60</span> * <span class="number">60</span> * <span class="number">1000</span>,
+},
+
+<span class="comment">// Also add to server.js for reverse-proxy / HTTPS deployments:</span>
+app.set(<span class="string">"trust proxy"</span>, <span class="number">1</span>);</pre>
+        </div>
+      </div>
+    </details>
+
+    <!-- ─── FINDING 08: No field length limits (INFO) ─────────────── -->
+    <details class="finding">
+      <summary class="finding-header">
+        <span class="finding-id">SEC-08</span>
+        <span class="finding-title">No maximum length validation on name/email fields in register</span>
+        <span class="sev info">Info</span>
+      </summary>
+      <div class="finding-body">
+        <div class="meta-row">
+          <div class="meta-chip"><span class="chip-label">CWE</span><span class="chip-val">CWE-400</span></div>
+          <div class="meta-chip"><span class="chip-label">Test</span><span class="chip-val">T24</span></div>
+        </div>
+        <div>
+          <div class="finding-section-label">Evidence</div>
+          <pre><span class="comment"># T24: 5000-character name is stored verbatim</span>
+curl -X POST /api/auth/register -d '{"name":"AAAA...(5000)","email":"...","password":"..."}'
+<span class="comment"># → {"name":"AAAA...(5000)","email":"..."} — stored in DB</span></pre>
+        </div>
+        <div>
+          <div class="finding-section-label">Recommended Fix</div>
+          <pre><span class="comment">// src/auth.js</span>
+<span class="key">if</span> (!name || name.trim().length === <span class="number">0</span> || name.trim().length > <span class="number">100</span>)
+  <span class="key">return</span> res.status(<span class="number">400</span>).json({ error: <span class="string">"El nombre debe tener entre 1 y 100 caracteres."</span> });
+<span class="key">if</span> (!email || email.length > <span class="number">254</span> || !EMAIL_REGEX.test(email))
+  <span class="key">return</span> res.status(<span class="number">400</span>).json({ error: <span class="string">"Email invalido."</span> });</pre>
+        </div>
+      </div>
+    </details>
+
+    <!-- ─── FINDING 09: JSON body error (INFO) ─────────────────────── -->
+    <details class="finding">
+      <summary class="finding-header">
+        <span class="finding-id">SEC-09</span>
+        <span class="finding-title">JSON body >50KB returns non-JSON HTML error page</span>
+        <span class="sev info">Info</span>
+      </summary>
+      <div class="finding-body">
+        <div class="meta-row">
+          <div class="meta-chip"><span class="chip-label">CWE</span><span class="chip-val">CWE-390</span></div>
+          <div class="meta-chip"><span class="chip-label">Test</span><span class="chip-val">T28</span></div>
+        </div>
+        <div>
+          <div class="finding-section-label">Description</div>
+          <p class="finding-text">
+            When the JSON request body exceeds the 50KB limit, Express throws a <code>PayloadTooLargeError</code>
+            which is handled by the default error middleware and returns an HTML page. JSON clients
+            fail to parse this and may surface raw HTML in error UI or logs. No server internals are exposed,
+            but the error format is inconsistent with the rest of the API.
+          </p>
+        </div>
+        <div>
+          <div class="finding-section-label">Recommended Fix</div>
+          <pre><span class="comment">// server.js — add a JSON error handler after all routes</span>
+app.use((err, req, res, next) => {
+  <span class="key">if</span> (err.type === <span class="string">"entity.too.large"</span>) {
+    <span class="key">return</span> res.status(<span class="number">413</span>).json({ error: <span class="string">"El cuerpo de la solicitud es demasiado grande."</span> });
+  }
+  next(err);
+});</pre>
+        </div>
+      </div>
+    </details>
+
+  </div>
+
+  <!-- ══════════════ CONFIRMED SAFE ══════════════ -->
+  <div class="section">
+    <div class="section-title"><span class="num">05</span> Confirmed Safe — Mitigated Vectors</div>
+    <p>The following attack classes were tested and found to be fully mitigated:</p>
+    <div class="table-wrap">
+      <table>
+        <thead>
+          <tr><th>Vector</th><th>Mechanism</th><th>Tests</th><th>Result</th></tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td><strong>SQL Injection</strong></td>
+            <td>All DB calls use <code>better-sqlite3</code> prepared statements with <code>?</code> placeholders — no string interpolation</td>
+            <td>T03a–d, T04a–b, T06a–c</td>
+            <td><span class="sev pass">Safe</span></td>
+          </tr>
+          <tr>
+            <td><strong>IDOR (Insecure Direct Object Reference)</strong></td>
+            <td>History queries include <code>AND user_id = ?</code> — cross-user access always returns 404</td>
+            <td>T07a–c</td>
+            <td><span class="sev pass">Safe</span></td>
+          </tr>
+          <tr>
+            <td><strong>SSRF via lookup input</strong></td>
+            <td><code>localhost</code> rejected by HOSTNAME_REGEX (requires dots); <code>file://</code>, <code>http://localhost</code> rejected; bogon IPs marked but DNS is never followed back to the IP — only forwarded to ipinfo.io</td>
+            <td>T10a–d, T26a–c</td>
+            <td><span class="sev pass">Safe</span></td>
+          </tr>
+          <tr>
+            <td><strong>Auth bypass</strong></td>
+            <td><code>requireAuth</code> middleware checks <code>req.session.userId</code> before every protected route</td>
+            <td>T12a–d</td>
+            <td><span class="sev pass">Safe</span></td>
+          </tr>
+          <tr>
+            <td><strong>Stored XSS via lookup</strong></td>
+            <td>Malformed inputs are rejected to the <code>invalid</code> array, not stored. Frontend uses <code>esc()</code> on all rendered values</td>
+            <td>T13</td>
+            <td><span class="sev pass">Safe</span></td>
+          </tr>
+          <tr>
+            <td><strong>Mass assignment</strong></td>
+            <td>Only <code>name</code>, <code>email</code>, <code>password</code> are destructured from <code>req.body</code> — extra fields (<code>role</code>, <code>id</code>) silently ignored</td>
+            <td>T17</td>
+            <td><span class="sev pass">Safe</span></td>
+          </tr>
+          <tr>
+            <td><strong>Oversized lookup input</strong></td>
+            <td><code>MAX_IPS_PER_REQUEST</code> (50) enforced in <code>server.js</code> before any processing</td>
+            <td>T18b</td>
+            <td><span class="sev pass">Safe</span></td>
+          </tr>
+          <tr>
+            <td><strong>CSRF</strong></td>
+            <td>No CORS headers set — API not reachable cross-origin; <code>SameSite=Lax</code> prevents session cookie from being attached to cross-origin POST requests</td>
+            <td>T29</td>
+            <td><span class="sev pass">Safe</span></td>
+          </tr>
+          <tr>
+            <td><strong>Session fixation</strong></td>
+            <td><code>req.session.regenerate()</code> is called on successful login, issuing a new session ID</td>
+            <td>Code review</td>
+            <td><span class="sev pass">Safe</span></td>
+          </tr>
+          <tr>
+            <td><strong>Content-type confusion</strong></td>
+            <td><code>express.json()</code> only parses <code>application/json</code> — <code>text/plain</code> body is not parsed, fields come out undefined, rejected with 400</td>
+            <td>T19</td>
+            <td><span class="sev pass">Safe</span></td>
+          </tr>
+          <tr>
+            <td><strong>Protocol injection (file://, ftp://)</strong></td>
+            <td><code>extractHostname()</code> parses URLs with the WHATWG <code>URL</code> class then validates the hostname against HOSTNAME_REGEX — <code>file://</code> yields no valid hostname</td>
+            <td>T26b</td>
+            <td><span class="sev pass">Safe</span></td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+  <!-- ══════════════ PRIORITIZED REMEDIATION ══════════════ -->
+  <div class="section">
+    <div class="section-title"><span class="num">06</span> Prioritized Remediation Checklist</div>
+    <div class="table-wrap">
+      <table>
+        <thead>
+          <tr><th>#</th><th>Finding</th><th>Severity</th><th>Effort</th><th>File</th></tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td>1</td>
+            <td>Add rate limiter to <code>/api/auth/login</code> + <code>/api/auth/register</code></td>
+            <td><span class="sev medium">Medium</span></td>
+            <td>~10 min</td>
+            <td><code>server.js</code></td>
+          </tr>
+          <tr>
+            <td>2</td>
+            <td>Cap password length at 72 chars (fix bcrypt truncation)</td>
+            <td><span class="sev medium">Medium</span></td>
+            <td>~5 min</td>
+            <td><code>src/auth.js</code></td>
+          </tr>
+          <tr>
+            <td>3</td>
+            <td>Install <code>helmet</code> and disable <code>X-Powered-By</code></td>
+            <td><span class="sev low">Low</span></td>
+            <td>~5 min</td>
+            <td><code>server.js</code></td>
+          </tr>
+          <tr>
+            <td>4</td>
+            <td>Make register email-check return generic 200 message</td>
+            <td><span class="sev medium">Medium</span></td>
+            <td>~5 min</td>
+            <td><code>src/auth.js</code></td>
+          </tr>
+          <tr>
+            <td>5</td>
+            <td>Pre-filter bogon IPs before <code>lookupIps()</code></td>
+            <td><span class="sev low">Low</span></td>
+            <td>~20 min</td>
+            <td><code>server.js</code>, <code>src/ipinfoClient.js</code></td>
+          </tr>
+          <tr>
+            <td>6</td>
+            <td>Set <code>cookie.secure: process.env.NODE_ENV === "production"</code></td>
+            <td><span class="sev low">Low</span></td>
+            <td>~2 min</td>
+            <td><code>server.js</code></td>
+          </tr>
+          <tr>
+            <td>7</td>
+            <td>Add name/email max-length validation in register</td>
+            <td><span class="sev info">Info</span></td>
+            <td>~5 min</td>
+            <td><code>src/auth.js</code></td>
+          </tr>
+          <tr>
+            <td>8</td>
+            <td>Add JSON error handler for 413 PayloadTooLarge</td>
+            <td><span class="sev info">Info</span></td>
+            <td>~5 min</td>
+            <td><code>server.js</code></td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+  <!-- ══════════════ FOOTER ══════════════ -->
+  <div class="footer">
+    <p>Assessment scope: localhost:3000 — <strong>ip-lookup-app</strong> (Node.js / Express / SQLite)</p>
+    <p>Tests executed: 29 | Duration: automated, ~5 minutes | Date: 2026-07-10</p>
+    <p>This report covers the codebase as of branch <code>remove-postman</code> (commit prefix 7d2b71e).</p>
+  </div>
+
+</div>
+</body>
+</html>

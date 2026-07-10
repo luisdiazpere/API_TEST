@@ -1,8 +1,13 @@
 HOSTING.md
 .env
 .postman/
+postman/
 bin/
 *.pen
 *.sqlite
 *.sqlite-shm
 *.sqlite-wal
+.mcp.json
+node_modules/
+security-tests/
+*.pentest.sh

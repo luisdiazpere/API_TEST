@@ -80,7 +80,6 @@ The full development record — every change, how it was built, and why — is i
 server.js            Express app: sessions, routes, lookup pipeline
 src/                 Backend modules (config, db, auth, history, pipeline stages)
 public/              Frontend: index, login, signup, history + shared JS/CSS
-postman/             Postman workspace for manual API testing
 docs/                Development history documentation
 ```
 
