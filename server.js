@@ -1,22 +1,49 @@
+require("dotenv").config();
 const express = require("express");
 const multer = require("multer");
 const path = require("path");
+const rateLimit = require("express-rate-limit");
+const session = require("express-session");
+const SqliteStore = require("better-sqlite3-session-store")(session);
 
-const { MAX_IPS_PER_REQUEST, PORT } = require("./src/config");
+const { MAX_IPS_PER_REQUEST, PORT, SESSION_SECRET } = require("./src/config");
+const db = require("./src/db");
 const { parseIpList } = require("./src/parseInput");
 const { isValidIp } = require("./src/validate");
 const { extractHostname } = require("./src/hostname");
 const { resolveHostname } = require("./src/dnsResolve");
 const { lookupIps } = require("./src/ipinfoClient");
 const { buildStats } = require("./src/stats");
+const { router: authRouter, requireAuth } = require("./src/auth");
+const { router: historyRouter, saveLookup } = require("./src/history");
 
 const app = express();
-const upload = multer({ storage: multer.memoryStorage() });
+const upload = multer({ storage: multer.memoryStorage(), limits: { fileSize: 1 * 1024 * 1024 } });
 
-app.use(express.json());
+app.use(express.json({ limit: "50kb" }));
 app.use(express.static(path.join(__dirname, "public")));
 
-app.post("/api/lookup", upload.single("file"), async (req, res) => {
+app.use(
+  session({
+    store: new SqliteStore({ client: db, expired: { clear: true, intervalMs: 15 * 60 * 1000 } }),
+    secret: SESSION_SECRET,
+    resave: false,
+    saveUninitialized: false,
+    cookie: { httpOnly: true, sameSite: "lax", maxAge: 7 * 24 * 60 * 60 * 1000 },
+  })
+);
+
+const lookupLimiter = rateLimit({
+  windowMs: 60 * 1000,
+  max: 30,
+  standardHeaders: true,
+  legacyHeaders: false,
+});
+
+app.use("/api/auth", authRouter);
+app.use("/api/history", historyRouter);
+
+app.post("/api/lookup", requireAuth, lookupLimiter, upload.single("file"), async (req, res) => {
   const tokens = parseIpList(req.body.ips, req.file ? req.file.buffer : null);
 
   if (tokens.length === 0) {
@@ -75,7 +102,7 @@ app.post("/api/lookup", upload.single("file"), async (req, res) => {
 
   const stats = buildStats(enrichedResults);
 
-  res.json({
+  const payload = {
     requested: tokens.length,
     results: enrichedResults,
     invalid,
@@ -83,7 +110,15 @@ app.post("/api/lookup", upload.single("file"), async (req, res) => {
     dnsErrors,
     stats,
     meta: { cacheHits, apiCalls },
-  });
+  };
+
+  try {
+    saveLookup(req.session.userId, payload);
+  } catch (error) {
+    console.error("No se pudo guardar el historial:", error.message);
+  }
+
+  res.json(payload);
 });
 
 app.listen(PORT, () => {
