@@ -37,6 +37,55 @@ npm start
 
 Create an account, run a batch, and check **account menu → Search history**.
 
+## Live testing with ngrok
+
+ngrok creates a public HTTPS tunnel to your local server — useful for testing on another device or sharing a live URL. One-time setup:
+
+**1. Create a free ngrok account**
+
+Go to [ngrok.com/signup](https://ngrok.com/signup) and create a free account. After login, copy your **Authtoken** from the dashboard at [dashboard.ngrok.com/get-started/your-authtoken](https://dashboard.ngrok.com/get-started/your-authtoken).
+
+**2. Install the binary**
+
+Place the ngrok binary at `bin/ngrok` (the `bin/` directory is gitignored so it never gets committed):
+
+```bash
+# Option A — Arch Linux (AUR)
+yay -S ngrok
+mkdir -p bin
+cp $(which ngrok) bin/ngrok
+
+# Option B — direct download (Linux x64)
+mkdir -p bin
+curl -Lo /tmp/ngrok.zip https://bin.equinox.io/c/bNyj1mQVY4c/ngrok-v3-stable-linux-amd64.zip
+unzip /tmp/ngrok.zip -d bin/
+chmod +x bin/ngrok
+```
+
+**3. Authenticate once**
+
+Paste your authtoken — this writes a config file to `~/.config/ngrok/ngrok.yml`:
+
+```bash
+bin/ngrok config add-authtoken <YOUR_AUTHTOKEN>
+```
+
+**4. Start the tunnel**
+
+Make sure the app is running (`npm start`), then:
+
+```bash
+bin/ngrok http 3000
+```
+
+ngrok prints a public HTTPS URL (e.g. `https://xxxx.ngrok-free.dev`). Open it in any browser — it proxies straight to `localhost:3000`.
+
+**5. Inspect traffic**
+
+While the tunnel is running, the ngrok dashboard at **http://localhost:4040** shows every request and response in real time and lets you replay them.
+
+> The authtoken is stored in `~/.config/ngrok/ngrok.yml` (outside the repo). `bin/` is gitignored — neither the binary nor credentials ever get committed.
+
 ## API
 
 All routes are JSON over same-origin session cookies. Everything except register/login requires a session.
