@@ -4,7 +4,8 @@
   "description": "Consulta de geolocalizacion de IPs usando ipinfo.io Lite API",
   "main": "server.js",
   "scripts": {
-    "start": "node server.js"
+    "start": "node server.js",
+    "test": "node --test"
   },
   "dependencies": {
     "@clerk/backend": "^3.17.1",
@@ -15,6 +16,7 @@
     "express": "^4.19.2",
     "express-rate-limit": "^8.5.2",
     "express-session": "^1.19.0",
-    "multer": "^2.0.1"
+    "multer": "^2.0.1",
+    "nodemailer": "^9.1.1"
   }
 }
