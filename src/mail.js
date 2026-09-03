@@ -4,8 +4,16 @@ const { SMTP_URL, MAIL_FROM } = require("./config");
 function welcome(name) {
   return {
     subject: "Welcome to IP Lookup",
-    text: `Hi ${name},\n\nYour IP Lookup account is ready. Sign in to run batch IP and `
-        + `domain lookups and keep a searchable history of every batch.\n\n— IP Lookup`,
+    text: `Hi ${name},\n\n`
+        + `Welcome to IP Lookup — your account is ready.\n\n`
+        + `IP Lookup batch-resolves IPs, domains, and URLs into geolocation data in one request. `
+        + `A few things you can do:\n\n`
+        + `- Paste or upload up to 50 IPs, domains, or URLs at once\n`
+        + `- Domains and URLs are automatically resolved via DNS before lookup\n`
+        + `- See country, continent, ASN, and organization for every result\n`
+        + `- Get per-batch stats and export everything as CSV or JSON\n`
+        + `- Every batch is saved to your history so you can revisit it later\n\n`
+        + `Sign in and paste your first list to get started.\n\n— IP Lookup`,
   };
 }
 
