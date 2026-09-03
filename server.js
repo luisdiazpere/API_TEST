@@ -18,6 +18,7 @@ const { router: authRouter, requireAuth } = require("./src/auth");
 const { router: historyRouter, saveLookup } = require("./src/history");
 
 const app = express();
+app.set("trust proxy", 1); // Render (and ngrok) terminate TLS in front of us — needed for req.protocol/req.ip to be correct
 const upload = multer({ storage: multer.memoryStorage(), limits: { fileSize: 1 * 1024 * 1024 } });
 
 app.use(express.json({ limit: "50kb" }));

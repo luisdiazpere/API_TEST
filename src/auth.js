@@ -2,7 +2,7 @@ const express = require("express");
 const bcrypt = require("bcrypt");
 const { verifyToken, createClerkClient } = require("@clerk/backend");
 const db = require("./db");
-const { CLERK_SECRET_KEY, APP_ORIGIN } = require("./config");
+const { CLERK_SECRET_KEY } = require("./config");
 
 const router = express.Router();
 const SALT_ROUNDS = 12;
@@ -59,9 +59,12 @@ router.post("/clerk", async (req, res) => {
     const { token } = req.body || {};
     if (!token) return res.status(400).json({ error: "Falta el token de Clerk." });
 
+    // Whatever origin actually served this request is the only one that should have
+    // been able to mint this token — works unmodified on localhost, Render, or any
+    // future custom domain, with no per-deployment env var to keep in sync.
     const { sub } = await verifyToken(token, {
       secretKey: CLERK_SECRET_KEY,
-      authorizedParties: [APP_ORIGIN],
+      authorizedParties: [`${req.protocol}://${req.get("host")}`],
     });
     const clerkUser = await clerkClient.users.getUser(sub);
 
