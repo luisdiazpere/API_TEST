@@ -48,6 +48,7 @@
       </div>
 
       <button type="submit" class="btn-primary" id="submit-btn">Create Account</button>
+      <button type="button" class="btn-secondary" id="clerk-btn" disabled>Continue with Clerk</button>
 
       <div class="auth-secondary">
         <span>Already have an account?</span>
@@ -57,5 +58,9 @@
   </main>
 
   <script src="auth-pages.js"></script>
+  <script src="/clerk-key.js"></script>
+  <script defer crossorigin="anonymous" src="https://cdn.jsdelivr.net/npm/@clerk/ui@1.32.0/dist/ui.browser.js"></script>
+  <script defer crossorigin="anonymous" src="https://cdn.jsdelivr.net/npm/@clerk/clerk-js@6.31.0/dist/clerk.browser.js"></script>
+  <script src="clerk-auth.js"></script>
 </body>
 </html>

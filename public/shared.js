@@ -34,6 +34,6 @@ function initAccountMenu(user) {
 
   logoutBtn.addEventListener("click", async () => {
     await fetch("/api/auth/logout", { method: "POST" });
-    window.location.href = "/login.html";
+    window.location.href = "/login.html?signedout=1";
   });
 }

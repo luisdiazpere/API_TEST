@@ -6,7 +6,7 @@ const rateLimit = require("express-rate-limit");
 const session = require("express-session");
 const SqliteStore = require("better-sqlite3-session-store")(session);
 
-const { MAX_IPS_PER_REQUEST, PORT, SESSION_SECRET } = require("./src/config");
+const { MAX_IPS_PER_REQUEST, PORT, SESSION_SECRET, CLERK_PUBLISHABLE_KEY } = require("./src/config");
 const db = require("./src/db");
 const { parseIpList } = require("./src/parseInput");
 const { isValidIp } = require("./src/validate");
@@ -40,7 +40,18 @@ const lookupLimiter = rateLimit({
   legacyHeaders: false,
 });
 
-app.use("/api/auth", authRouter);
+const authLimiter = rateLimit({
+  windowMs: 60 * 1000,
+  max: 20,
+  standardHeaders: true,
+  legacyHeaders: false,
+});
+
+app.get("/clerk-key.js", (req, res) => {
+  res.type("application/javascript").send(`window.__clerk_publishable_key=${JSON.stringify(CLERK_PUBLISHABLE_KEY)}`);
+});
+
+app.use("/api/auth", authLimiter, authRouter);
 app.use("/api/history", historyRouter);
 
 app.post("/api/lookup", requireAuth, lookupLimiter, upload.single("file"), async (req, res) => {
