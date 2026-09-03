@@ -7,6 +7,7 @@
     "start": "node server.js"
   },
   "dependencies": {
+    "@clerk/backend": "^3.17.1",
     "bcrypt": "^6.0.0",
     "better-sqlite3": "^12.11.1",
     "better-sqlite3-session-store": "^0.1.0",
