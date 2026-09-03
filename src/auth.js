@@ -3,6 +3,7 @@ const bcrypt = require("bcrypt");
 const { verifyToken, createClerkClient } = require("@clerk/backend");
 const db = require("./db");
 const { CLERK_SECRET_KEY } = require("./config");
+const { sendWelcome } = require("./mail");
 
 const router = express.Router();
 const SALT_ROUNDS = 12;
@@ -90,7 +91,7 @@ router.post("/clerk", async (req, res) => {
     req.session.regenerate((err) => {
       if (err) return res.status(500).json({ error: "No se pudo iniciar sesion." });
       req.session.userId = user.id;
-      // Phase 2: if (isNew) sendWelcome(email, name).catch((e) => console.error("[mail]", e.message));
+      if (isNew) sendWelcome(email, name).catch((e) => console.error("[mail]", e.message));
       res.json({ name: user.name, email });
     });
   } catch (error) {

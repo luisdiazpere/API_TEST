@@ -8,7 +8,8 @@ Batch IP and domain geolocation lookup tool. Paste or upload a list of IPs, doma
 - **DNS resolution** — domains and URLs are resolved to all their IPs before lookup
 - **Bogon detection** — private/reserved ranges are flagged and skipped, not sent to the API
 - **Stats** — per-batch breakdown by country, continent, and ASN, plus cache/API call counts
-- **Accounts & history** — session-based login; every batch is saved and can be re-viewed or deleted from the history page
+- **Accounts & history** — session-based login (email/password, or "Continue with Clerk"); every batch is saved and can be re-viewed or deleted from the history page
+- **Welcome email** — sent on a Clerk user's first sign-in (skipped on repeat sign-ins)
 - **Exports** — download results as CSV or JSON, client-side
 - **Response cache** — in-memory TTL cache (10 min) keeps repeat lookups off the API quota
 - **Rate limiting** — 30 requests/min per IP on the lookup endpoint
@@ -26,6 +27,15 @@ Create a `.env` file in the project root:
 ```bash
 IPINFO_TOKEN=<your ipinfo.io token>          # https://ipinfo.io/signup
 SESSION_SECRET=<random string>               # e.g. openssl rand -hex 32
+CLERK_PUBLISHABLE_KEY=<pk_test_...>          # dashboard.clerk.com → API Keys
+CLERK_SECRET_KEY=<sk_test_...>               # same page
+
+# Optional — unset means welcome emails print to the console instead of sending.
+# Get an API key at resend.com/api-keys. Without a verified domain (resend.com/domains),
+# onboarding@resend.dev can only deliver to the email on your own Resend account —
+# every other recipient gets a 403. Verify a domain to email real signups.
+SMTP_URL=smtp://resend:<api-key>@smtp.resend.com:587
+MAIL_FROM=IP Lookup <onboarding@resend.dev>
 ```
 
 Then:

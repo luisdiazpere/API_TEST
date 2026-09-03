@@ -10,6 +10,9 @@ if (!CLERK_PUBLISHABLE_KEY) throw new Error("CLERK_PUBLISHABLE_KEY env var is re
 const CLERK_SECRET_KEY = process.env.CLERK_SECRET_KEY;
 if (!CLERK_SECRET_KEY) throw new Error("CLERK_SECRET_KEY env var is required — set it in .env");
 
+const SMTP_URL = process.env.SMTP_URL || null; // unset → welcome emails are logged, not sent
+const MAIL_FROM = process.env.MAIL_FROM || "IP Lookup <no-reply@localhost>";
+
 const IPINFO_BASE_URL = "https://api.ipinfo.io/lite";
 const MAX_IPS_PER_REQUEST = 50;
 const CACHE_TTL_MS = 10 * 60 * 1000;
@@ -21,6 +24,8 @@ module.exports = {
   SESSION_SECRET,
   CLERK_PUBLISHABLE_KEY,
   CLERK_SECRET_KEY,
+  SMTP_URL,
+  MAIL_FROM,
   IPINFO_BASE_URL,
   MAX_IPS_PER_REQUEST,
   CACHE_TTL_MS,
