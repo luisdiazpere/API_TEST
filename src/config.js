@@ -10,8 +10,6 @@ if (!CLERK_PUBLISHABLE_KEY) throw new Error("CLERK_PUBLISHABLE_KEY env var is re
 const CLERK_SECRET_KEY = process.env.CLERK_SECRET_KEY;
 if (!CLERK_SECRET_KEY) throw new Error("CLERK_SECRET_KEY env var is required — set it in .env");
 
-const APP_ORIGIN = process.env.APP_ORIGIN || "http://localhost:3000";
-
 const IPINFO_BASE_URL = "https://api.ipinfo.io/lite";
 const MAX_IPS_PER_REQUEST = 50;
 const CACHE_TTL_MS = 10 * 60 * 1000;
@@ -23,7 +21,6 @@ module.exports = {
   SESSION_SECRET,
   CLERK_PUBLISHABLE_KEY,
   CLERK_SECRET_KEY,
-  APP_ORIGIN,
   IPINFO_BASE_URL,
   MAX_IPS_PER_REQUEST,
   CACHE_TTL_MS,
